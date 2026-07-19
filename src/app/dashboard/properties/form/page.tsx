@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppContext } from "@/contexts/AppContext";
 import type { Property } from "@/lib/types";
@@ -18,7 +18,7 @@ function ClientFormContent() {
   const existingProp = editId ? state.properties.find((p) => p.id === editId) : null;
   const isEdit = !!existingProp;
 
-  // ✅✅✅ حالة النموذج - مع الحقول الجديدة للمالك:
+  // حالة النموذج
   const [form, setForm] = useState({
     operation: (existingProp?.operation as Property["operation"]) || "بيع",
     propertyType: existingProp?.propertyType || "",
@@ -45,19 +45,22 @@ function ClientFormContent() {
     negotiable: existingProp?.negotiable || false,
     rent: String(existingProp?.rent || ""),
     mortgage: String(existingProp?.mortgage || ""),
-    images: existingProp?.images || ["/placeholder.jpg"],
+    images: existingProp?.images || [],
     video: existingProp?.video || "",
     description: existingProp?.description || "",
     featured: existingProp?.featured || false,
     
-    // ✅✅✅ الحقول الجديدة - صاحب العقار:
+    // حقول صاحب العقار
     ownerName: existingProp?.ownerName || "",
     ownerPhone: existingProp?.ownerPhone || "",
     ownerWhatsapp: existingProp?.ownerWhatsapp || "",
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewImages, setPreviewImages] = useState<string[]>(existingProp?.images || ["/placeholder.jpg"]);
+  // ✅✅✅ حقل إدخال رابط الصورة الواحد
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  
+  // الصور المعروضة
+  const [previewImages, setPreviewImages] = useState<string[]>(existingProp?.images || []);
 
   useEffect(() => {
     if (existingProp?.images) {
@@ -77,24 +80,39 @@ function ClientFormContent() {
     }
   };
 
-  // ✅ دالة رفع الصور (يمكن تطويرها لاحقاً لرفع فعلي)
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    const newImages: string[] = [...form.images];
+  // ✅✅✅ دالة إضافة رابط صورة
+  const addImageUrl = () => {
+    const url = imageUrlInput.trim();
     
-    Array.from(files).forEach((file) => {
-      // حالياً نستخدم URL.createObjectURL (محلي)
-      // TODO: لاحقاً ارفع الصورة واحفظ الرابط
-      const url = URL.createObjectURL(file);
-      newImages.push(url);
-    });
+    if (!url) {
+      alert("الرجاء إدخال رابط الصورة أولاً");
+      return;
+    }
 
+    // التحقق من أن الرابط صحيح
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      alert("الرجاء إدخال رابط صحيح (يجب أن يبدأ بـ http أو https)");
+      return;
+    }
+
+    // إضافة الصورة للقائمة
+    const newImages = [...form.images, url];
     setForm((prev) => ({ ...prev, images: newImages }));
     setPreviewImages(newImages);
+    
+    // تفريغ الحقل
+    setImageUrlInput("");
   };
 
+  // ✅✅✅ دالة إضافة بالضغط على Enter
+  const handleImageKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addImageUrl();
+    }
+  };
+
+  // حذف صورة
   const removeImage = (idx: number) => {
     const newImages = form.images.filter((_, i) => i !== idx);
     setForm((prev) => ({ ...prev, images: newImages }));
@@ -106,7 +124,6 @@ function ClientFormContent() {
 
     const now = new Date();
     
-    // ✅✅✅ كائن العقار مع الحقول الجديدة:
     const propertyData: Property = {
       id: existingProp?.id || String(Date.now()),
       operation: form.operation as Property["operation"],
@@ -141,7 +158,6 @@ function ClientFormContent() {
       createdAt: existingProp ? new Date(existingProp.createdAt) : now,
       updatedAt: now,
 
-      // ✅✅✅ حقول صاحب العقار:
       ownerName: form.ownerName.trim() || undefined,
       ownerPhone: form.ownerPhone.trim() || undefined,
       ownerWhatsapp: form.ownerWhatsapp.trim() || undefined,
@@ -179,74 +195,42 @@ function ClientFormContent() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* نوع العملية */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">نوع العملية *</label>
-                <select
-                  name="operation"
-                  value={form.operation}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
+                <select name="operation" value={form.operation} onChange={handleChange} required
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="بيع">بيع</option>
                   <option value="كراء">كراء</option>
                   <option value="رهن">رهن</option>
                 </select>
               </div>
 
-              {/* نوع العقار */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">نوع العقار *</label>
-                <input
-                  type="text"
-                  name="propertyType"
-                  value={form.propertyType}
-                  onChange={handleChange}
-                  required
+                <input type="text" name="propertyType" value={form.propertyType} onChange={handleChange} required
                   placeholder="مثال: شقة، فيلا، محل..."
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* المدينة */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المدينة *</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={form.city}
-                  onChange={handleChange}
-                  required
+                <input type="text" name="city" value={form.city} onChange={handleChange} required
                   placeholder="مثال: الدار البيضاء"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* District */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الحي / المنطقة</label>
-                <input
-                  type="text"
-                  name="district"
-                  value={form.district}
-                  onChange={handleChange}
+                <input type="text" name="district" value={form.district} onChange={handleChange}
                   placeholder="مثال: المعاريف"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* العنوان */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">العنوان التفصيلي</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
+                <input type="text" name="address" value={form.address} onChange={handleChange}
                   placeholder="العنوان الكامل..."
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
             </div>
           </div>
@@ -258,104 +242,46 @@ function ClientFormContent() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* السعر */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">السعر (درهم) *</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={form.price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="price" value={form.price} onChange={handleChange} required min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* الكراء */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الكراء/شهر (درهم)</label>
-                <input
-                  type="number"
-                  name="rent"
-                  value={form.rent}
-                  onChange={handleChange}
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="rent" value={form.rent} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* الرهن */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الرهن (درهم)</label>
-                <input
-                  type="number"
-                  name="mortgage"
-                  value={form.mortgage}
-                  onChange={handleChange}
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="mortgage" value={form.mortgage} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* المساحة */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المساحة (م²) *</label>
-                <input
-                  type="number"
-                  name="area"
-                  value={form.area}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="area" value={form.area} onChange={handleChange} required min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* الغرف */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">عدد الغرف *</label>
-                <input
-                  type="number"
-                  name="rooms"
-                  value={form.rooms}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="rooms" value={form.rooms} onChange={handleChange} required min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
-              {/* الطابق */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الطابق</label>
-                <input
-                  type="number"
-                  name="floor"
-                  value={form.floor}
-                  onChange={handleChange}
-                  min="0"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <input type="number" name="floor" value={form.floor} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
             </div>
 
-            {/* قابل للتفاوض */}
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="negotiable"
-                name="negotiable"
-                checked={form.negotiable}
-                onChange={handleChange}
-                className="w-5 h-5 rounded bg-slate-700 text-emerald-500 focus:ring-emerald-500"
-              />
+              <input type="checkbox" id="negotiable" name="negotiable" checked={form.negotiable} onChange={handleChange}
+                className="w-5 h-5 rounded bg-slate-700 text-emerald-500 focus:ring-emerald-500" />
               <label htmlFor="negotiable" className="text-gray-300">قابل للتفاوض</label>
             </div>
           </div>
@@ -369,50 +295,48 @@ function ClientFormContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الصالونات</label>
-                <input type="number" name="salons" value={form.salons} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="salons" value={form.salons} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الحمامات</label>
-                <input type="number" name="bathrooms" value={form.bathrooms} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="bathrooms" value={form.bathrooms} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المطابخ</label>
-                <input type="number" name="kitchens" value={form.kitchens} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="kitchens" value={form.kitchens} onChange={handleChange} min="0" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">سنة البناء</label>
-                <input type="number" name="year" value={form.year} onChange={handleChange} min="1900" max="2030" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="year" value={form.year} onChange={handleChange} min="1900" max="2030" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
             </div>
 
-            {/* المميزات */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { key: "garage", label: "🚗 مرآب", field: "garage" },
-                { key: "elevator", label: "🛗 مصعد", field: "elevator" },
-                { key: "balcony", label: "🌿 بلكون", field: "balcony" },
-                { key: "garden", label: "🌳 حديقة", field: "garden" },
-                { key: "pool", label: "🏊 مسبح", field: "pool" },
-                { key: "guard", label: "👮 حراسة", field: "guard" },
+                { key: "garage", label: "🚗 مرآب" },
+                { key: "elevator", label: "🛗 مصعد" },
+                { key: "balcony", label: "🌿 بلكون" },
+                { key: "garden", label: "🌳 حديقة" },
+                { key: "pool", label: "🏊 مسبح" },
+                { key: "guard", label: "👮 حراسة" },
               ].map((item) => (
                 <label key={item.key} className="flex items-center gap-3 bg-slate-700/50 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition">
-                  <input
-                    type="checkbox"
-                    name={item.field}
-                    checked={(form as any)[item.field]}
-                    onChange={handleChange}
-                    className="w-5 h-5 rounded bg-slate-600 text-emerald-500 focus:ring-emerald-500"
-                  />
+                  <input type="checkbox" name={item.key} checked={(form as any)[item.key]} onChange={handleChange}
+                    className="w-5 h-5 rounded bg-slate-600 text-emerald-500 focus:ring-emerald-500" />
                   <span className="text-gray-300">{item.label}</span>
                 </label>
               ))}
             </div>
 
-            {/* الواجهة والمنظر */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الواجهة</label>
-                <select name="facade" value={form.facade} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <select name="facade" value={form.facade} onChange={handleChange}
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="">اختر الواجهة</option>
                   <option value="شمال">شمال</option>
                   <option value="جنوب">جنوب</option>
@@ -422,7 +346,8 @@ function ClientFormContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المنظر</label>
-                <select name="view" value={form.view} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <select name="view" value={form.view} onChange={handleChange}
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="">اختر المنظر</option>
                   <option value="شارع">شارع</option>
                   <option value="حديقة">حديقة</option>
@@ -432,10 +357,10 @@ function ClientFormContent() {
               </div>
             </div>
 
-            {/* الحالة */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">حالة العقار</label>
-              <select name="status" value={form.status} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+              <select name="status" value={form.status} onChange={handleChange}
+                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                 <option value="متوفر">متوفر</option>
                 <option value="محجوز">محجوز</option>
                 <option value="تم البيع">تم البيع</option>
@@ -444,52 +369,100 @@ function ClientFormContent() {
             </div>
           </div>
 
-          {/* ===== القسم 4: الصور ===== */}
+          {/* ✅✅✅ ===== القسم 4: الصور (بالروابط) ===== */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2 flex items-center gap-2">
               🖼️ صور العقار
+              <span className="text-xs font-normal text-gray-400">(روابط خارجية)</span>
             </h2>
 
-            {/* رفع صور جديدة */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">إضافة صور</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-emerald-500 hover:bg-slate-700/30 transition"
-              >
-                <span className="text-4xl mb-2 block">📷</span>
-                <span className="text-gray-400">اضغط لاختيار الصور</span>
-                <span className="text-xs text-gray-500 block mt-1">(يمكن اختيار عدة صور)</span>
-              </button>
+            {/* ✅ حقل إدخال الرابط + زر الإضافة */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  أدخل رابط الصورة
+                </label>
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  onKeyPress={handleImageKeyPress}
+                  placeholder="https://example.com/image.jpg"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={addImageUrl}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition hover:scale-105 whitespace-nowrap"
+                >
+                  ➕ إضافة صورة
+                </button>
+              </div>
             </div>
 
-            {/* معاينة الصور */}
-            {previewImages.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {previewImages.map((img, idx) => (
-                  <div key={idx} className="relative group rounded-lg overflow-hidden">
-                    <img src={img} alt={`صورة ${idx + 1}`} className="w-full h-32 object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full opacity-0 group-hover:opacity-100 transition text-sm font-bold"
-                    >
-                      ✕
-                    </button>
-                    <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                      {idx + 1}
-                    </span>
-                  </div>
-                ))}
+            {/* نصائح */}
+            <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 text-sm text-blue-200">
+              <p className="font-medium mb-1">💡 كيفية إضافة صور:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs text-blue-300/80">
+                <li>ارفع الصور لأي خدمة (Google Drive, Imgur, Dropbox...)</li>
+                <li>انسخ رابط الصورة والصقه في الحقل أعلاه</li>
+                <li>اضغط "إضافة صورة" أو Enter</li>
+                <li>يمكنك إضافة عدد غير محدود من الصور!</li>
+              </ul>
+            </div>
+
+            {/* ✅ معاينة الصور المضافة */}
+            {previewImages.length > 0 ? (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-300">
+                    📷 الصور المضافة ({previewImages.length})
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {previewImages.map((img, idx) => (
+                    <div key={idx} className="relative group rounded-lg overflow-hidden bg-slate-700">
+                      <img 
+                        src={img} 
+                        alt={`صورة ${idx + 1}`} 
+                        className="w-full h-28 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                        }}
+                      />
+                      
+                      {/* ترقيم الصورة */}
+                      <span className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                        {idx + 1}
+                      </span>
+                      
+                      {/* زر الحذف */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold hover:bg-red-700"
+                        title="حذف هذه الصورة"
+                      >
+                        ✕
+                      </button>
+                      
+                      {/* عرض الرابط عند التمرير */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-[9px] text-gray-300 truncate" dir="ltr">{img}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center">
+                <span className="text-4xl block mb-2">🖼️</span>
+                <p className="text-gray-400">لم تُضاف أي صور بعد</p>
+                <p className="text-xs text-gray-500 mt-1">استخدم الحقل أعلاه لإضافة روابط الصور</p>
               </div>
             )}
           </div>
@@ -500,55 +473,31 @@ function ClientFormContent() {
               🎬 الفيديو والوصف
             </h2>
 
-            {/* رابط الفيديو */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">رابط الفيديو (YouTube أو غيره)</label>
-              <input
-                type="url"
-                name="video"
-                value={form.video}
-                onChange={handleChange}
-                placeholder="https://youtube.com/watch?..."
-                dir="ltr"
-                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+              <input type="url" name="video" value={form.video} onChange={handleChange}
+                placeholder="https://youtube.com/watch?..." dir="ltr"
+                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
 
-            {/* الوصف */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">وصف العقار</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={5}
+              <textarea name="description" value={form.description} onChange={handleChange} rows={5}
                 placeholder="اكتب وصفاً تفصيلياً للعقار..."
-                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
-              />
+                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none" />
             </div>
 
-            {/* مميز */}
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="featured"
-                name="featured"
-                checked={form.featured}
-                onChange={handleChange}
-                className="w-5 h-5 rounded bg-slate-700 text-amber-500 focus:ring-amber-500"
-              />
+              <input type="checkbox" id="featured" name="featured" checked={form.featured} onChange={handleChange}
+                className="w-5 h-5 rounded bg-slate-700 text-amber-500 focus:ring-amber-500" />
               <label htmlFor="featured" className="text-gray-300">⭐ عرض كعقار مميز</label>
             </div>
           </div>
 
-          {/* ✅✅✅ القسم 6: معلومات صاحب العقار (خاص - لا يظهر للزوار) */}
-          <div 
-            className="space-y-6 p-6 rounded-xl border-2 border-dashed"
-            style={{
-              background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(69, 26, 3, 0.3) 100%)',
-              borderColor: '#f59e0b'
-            }}
-          >
+          {/* ===== القسم 6: معلومات صاحب العقار ===== */}
+          <div className="space-y-6 p-6 rounded-xl border-2 border-dashed"
+            style={{ background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(69, 26, 3, 0.3) 100%)', borderColor: '#f59e0b' }}>
+            
             <div className="flex items-center gap-3">
               <span className="text-2xl">🔒</span>
               <div>
@@ -558,55 +507,28 @@ function ClientFormContent() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* اسم صاحب العقار */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  👤 اسم صاحب العقار
-                </label>
-                <input
-                  type="text"
-                  name="ownerName"
-                  value={form.ownerName}
-                  onChange={handleChange}
+                <label className="block text-sm font-medium text-gray-300 mb-2">👤 اسم صاحب العقار</label>
+                <input type="text" name="ownerName" value={form.ownerName} onChange={handleChange}
                   placeholder="مثال: محمد العلوي"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                />
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
 
-              {/* رقم الهاتف */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  ☎️ رقم الهاتف
-                </label>
-                <input
-                  type="tel"
-                  name="ownerPhone"
-                  value={form.ownerPhone}
-                  onChange={handleChange}
-                  placeholder="0661234567"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">☎️ رقم الهاتف</label>
+                <input type="tel" name="ownerPhone" value={form.ownerPhone} onChange={handleChange}
+                  placeholder="0661234567" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
 
-              {/* رقم الواتساب */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  💬 رقم الواتساب <span className="text-gray-500">(اختياري)</span>
-                </label>
-                <input
-                  type="tel"
-                  name="ownerWhatsapp"
-                  value={form.ownerWhatsapp}
-                  onChange={handleChange}
-                  placeholder="اتركه فارغاً = نفس الهاتف"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">💬 رقم الواتساب <span className="text-gray-500">(اختياري)</span></label>
+                <input type="tel" name="ownerWhatsapp" value={form.ownerWhatsapp} onChange={handleChange}
+                  placeholder="اتركه فارغاً = نفس الهاتف" dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
             </div>
 
-            {/* تنبيه */}
             <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-3 flex items-start gap-3">
               <span className="text-amber-400">ℹ️</span>
               <p className="text-sm text-amber-200/80">
@@ -617,17 +539,12 @@ function ClientFormContent() {
 
           {/* ===== أزرار الإجراءات ===== */}
           <div className="flex gap-4 pt-4 border-t border-slate-700">
-            <button
-              type="submit"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02]"
-            >
+            <button type="submit"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02]">
               {isEdit ? "💾 حفظ التعديلات" : "➕ إضافة العقار"}
             </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition"
-            >
+            <button type="button" onClick={() => router.back()}
+              className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition">
               إلغاء
             </button>
           </div>
