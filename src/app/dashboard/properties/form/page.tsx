@@ -107,7 +107,7 @@ function PropertyFormContent() {
       salons: toNum(form.salons),
       bathrooms: toNum(form.bathrooms),
       kitchens: toNum(form.kitchens),
-      floor: form.floor,
+     floor: toNum(form.floor),
       year: toNum(form.year),
       facade: form.facade,
       view: form.view,
