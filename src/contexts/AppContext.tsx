@@ -2,7 +2,23 @@
 
 import React, { createContext, useContext, useReducer, useRef, useEffect, ReactNode } from "react";
 import { Property, Client, Request, User } from "@/lib/types";
-import { sampleProperties, sampleClients, sampleRequests, sampleUsers, initialCounters } from "@/lib/data";
+import { sampleUsers } from "@/lib/data";
+
+// ✅✅✅ استيراد دوال Firebase:
+import {
+  getAllProperties,
+  getAllClients,
+  getAllRequests,
+  addProperty as fbAddProperty,
+  updateProperty as fbUpdateProperty,
+  deleteProperty as fbDeleteProperty,
+  addClient as fbAddClient,
+  updateClient as fbUpdateClient,
+  deleteClient as fbDeleteClient,
+  addRequest as fbAddRequest,
+  updateRequest as fbUpdateRequest,
+  deleteRequest as fbDeleteRequest,
+} from "@/lib/firestore";
 
 interface Toast {
   message: string;
@@ -16,9 +32,7 @@ interface AppState {
   currentUser: User | null;
   favorites: string[];
   toast: Toast | null;
-  propCounter: number;
-  reqCounter: number;
-  cliCounter: number;
+  loading: boolean; // ✅ إضافة حالة التحميل
 }
 
 interface Action {
@@ -33,53 +47,16 @@ interface AppContextType {
   getMatches: (property: Property) => string[];
 }
 
+// ✅ الحالة الأولية - فارغة (ستُحمّل من Firebase)
 const initialState: AppState = {
-  properties: sampleProperties,
-  clients: sampleClients,
-  requests: sampleRequests,
+  properties: [],
+  clients: [],
+  requests: [],
   currentUser: null,
   favorites: [],
   toast: null,
-  propCounter: initialCounters.propertyCounter,
-  reqCounter: initialCounters.requestCounter,
-  cliCounter: initialCounters.clientCounter,
+  loading: true, // ✅ يبدأ بالتحميل
 };
-
-const STORAGE_KEY = "aqari_plus_data";
-
-function loadState(): AppState {
-  if (typeof window === "undefined") return initialState;
-  
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return initialState;
-    
-    const parsed = JSON.parse(saved);
-    return { ...initialState, ...parsed };
-  } catch (error) {
-    console.error("Error loading state:", error);
-  }
-  
-  return initialState;
-}
-
-function saveState(state: AppState) {
-  if (typeof window === "undefined") return;
-  try {
-    const toSave = {
-      properties: state.properties,
-      clients: state.clients,
-      requests: state.requests,
-      favorites: state.favorites,
-      propCounter: state.propCounter,
-      reqCounter: state.reqCounter,
-      cliCounter: state.cliCounter,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch {
-    /* empty */
-  }
-}
 
 function reducer(state: AppState, action: Action): AppState {
   var s = Object.assign({}, state);
@@ -93,7 +70,6 @@ function reducer(state: AppState, action: Action): AppState {
       break;
     case "ADD_PROPERTY":
       s.properties = [action.payload].concat(s.properties);
-      s.propCounter = s.propCounter + 1;
       break;
     case "UPDATE_PROPERTY":
       s.properties = s.properties.map(function (p) {
@@ -108,7 +84,6 @@ function reducer(state: AppState, action: Action): AppState {
       break;
     case "ADD_CLIENT":
       s.clients = s.clients.concat([action.payload]);
-      s.cliCounter = s.cliCounter +  1;
       break;
     case "UPDATE_CLIENT":
       s.clients = s.clients.map(function (c) {
@@ -132,7 +107,6 @@ function reducer(state: AppState, action: Action): AppState {
       break;
     case "ADD_REQUEST":
       s.requests = s.requests.concat([action.payload]);
-      s.reqCounter = s.reqCounter + 1;
       break;
     case "UPDATE_REQUEST":
       s.requests = s.requests.map(function (r) {
@@ -159,7 +133,10 @@ function reducer(state: AppState, action: Action): AppState {
       s.toast = action.payload;
       break;
     case "LOAD_STATE":
-      s = action.payload;
+      s = { ...s, ...action.payload, loading: false };
+      break;
+    case "SET_LOADING":
+      s.loading = action.payload;
       break;
   }
   return s;
@@ -167,27 +144,62 @@ function reducer(state: AppState, action: Action): AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// ✅✅✅ التصحيح الرئيسي هنا:
 export function AppProvider({ children }: { children: ReactNode }) {
-  // ✅ استخدم destructuring صحيح:
   const [state, dispatch] = useReducer(reducer, initialState);
   const loaded = useRef(false);
 
-  // ✅ تحميل الحالة الأولية
+  // ✅✅✅ تحميل البيانات من Firebase عند البداية
   useEffect(function () {
     if (!loaded.current) {
-      var saved = loadState();
-      dispatch({ type: "LOAD_STATE", payload: saved });
+      loadFromFirebase();
       loaded.current = true;
     }
   }, []);
 
-  // ✅ حفظ الحالة عند التغيير
-  useEffect(function () {
-    if (loaded.current && state) {
-      saveState(state);  // ✅ الآن state هو AppState صحيح!
+  // ✅✅✅ دالة تحميل البيانات من Firebase
+  async function loadFromFirebase() {
+    try {
+      console.log("🔄 جاري تحميل البيانات من Firebase...");
+
+      const [properties, clients, requests] = await Promise.all([
+        getAllProperties(),
+        getAllClients(),
+        getAllRequests(),
+      ]);
+
+      dispatch({
+        type: "LOAD_STATE",
+        payload: {
+          properties,
+          clients,
+          requests,
+          favorites: JSON.parse(localStorage.getItem("aqari_favorites") || "[]"),
+        },
+      });
+
+      console.log("✅ تم تحميل البيانات بنجاح!");
+      console.log(`📊 العقارات: ${properties.length} | العملاء: ${clients.length} | الطلبات: ${requests.length}`);
+    } catch (error) {
+      console.error("❌ خطأ في تحميل البيانات:", error);
+      dispatch({ type: "SET_LOADING", payload: false });
+      
+      // عرض رسالة خطأ للمستخدم
+      dispatch({
+        type: "SHOW_TOAST",
+        payload: { message: "فشل في تحميل البيانات", type: "error" },
+      });
     }
-  }, [state]);  // ✅ أضف dependency
+  }
+
+  // ✅✅✅ مراقبة التغييرات وحفظها في Firebase
+  useEffect(function () {
+    if (!loaded.current || state.loading) return;
+
+    // حفظ المفضلة في localStorage (صغيرة وسريعة)
+    if (state.favorites) {
+      localStorage.setItem("aqari_favorites", JSON.stringify(state.favorites));
+    }
+  }, [state.favorites, state.loading]);
 
   // ✅ إدارة Toast
   useEffect(function () {
@@ -197,7 +209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, 3000);
       return function () { clearTimeout(t); };
     }
-  }, [state?.toast]);  // ✅ استخدام optional chaining
+  }, [state?.toast]);
 
   var login = function (email: string, password: string): User | null {
     var user: User | null = null;
@@ -236,10 +248,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return unique;
   };
 
-  if (!state) {
+  // ✅✅✅ شاشة التحميل
+  if (state.loading) {
     return (
-      <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
-        جاري التحميل...
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#0f172a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        {/* Animated icon */}
+        <div style={{
+          fontSize: '60px',
+          animation: 'bounce 1s infinite'
+        }}>🏠</div>
+        
+        {/* Loading text */}
+        <h2 style={{ color: '#ffffff', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+          جاري تحميل البيانات...
+        </h2>
+        
+        {/* Subtitle */}
+        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
+          من فضلك انتظر قليلاً
+        </p>
+
+        {/* Loading bar */}
+        <div style={{
+          width: '200px',
+          height: '4px',
+          backgroundColor: '#1e293b',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          marginTop: '10px'
+        }}>
+          <div style={{
+            width: '60%',
+            height: '100%',
+            backgroundColor: '#10b981',
+            borderRadius: '4px',
+            animation: 'loading 1.5s ease-in-out infinite'
+          }}></div>
+        </div>
+
+        {/* CSS Animations */}
+        <style>{`
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+          }
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(150%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -249,7 +320,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {children}
     </AppContext.Provider>
   );
-};
+}
 
 // ✅ useAppContext hook
 export const useAppContext = () => {
