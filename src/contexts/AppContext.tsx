@@ -4,20 +4,11 @@ import React, { createContext, useContext, useReducer, useRef, useEffect, ReactN
 import { Property, Client, Request, User } from "@/lib/types";
 import { sampleUsers } from "@/lib/data";
 
-// ✅ استيراد دوال Firebase:
+// ✅ استيراد دوال Firebase للقراءة فقط:
 import {
   getAllProperties,
   getAllClients,
   getAllRequests,
-  addProperty as fbAddProperty,
-  updateProperty as fbUpdateProperty,
-  deleteProperty as fbDeleteProperty,
-  addClient as fbAddClient,
-  updateClient as fbUpdateClient,
-  deleteClient as fbDeleteClient,
-  addRequest as fbAddRequest,
-  updateRequest as fbUpdateRequest,
-  deleteRequest as fbDeleteRequest,
 } from "@/lib/firestore";
 
 interface Toast {
@@ -57,7 +48,7 @@ const initialState: AppState = {
   loading: true,
 };
 
-// ✅✅✅ Reducer - مع كتابة تلقائية في Firebase!
+// ✅✅✅ Reducer - State فقط! (بدون كتابة مزدوجة في Firebase)
 function reducer(state: AppState, action: Action): AppState {
   var s = Object.assign({}, state);
 
@@ -69,30 +60,23 @@ function reducer(state: AppState, action: Action): AppState {
       s.currentUser = null;
       break;
       
-    // ✅ العقارات - تكتب في Firebase
+    // ✅ العقارات - State فقط
     case "ADD_PROPERTY":
       s.properties = [action.payload].concat(s.properties);
-      // ✅ كتابة في Firebase (async - لا ننتظر)
-      fbAddProperty(action.payload).catch(err => console.error("❌ Firebase add property:", err));
       break;
     case "UPDATE_PROPERTY":
       s.properties = s.properties.map(function (p) {
         if (p.id === action.payload.id) return action.payload;
         return p;
       });
-      // ✅ تحديث في Firebase
-      fbUpdateProperty(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update:", err));
       break;
     case "DELETE_PROPERTY":
       s.properties = s.properties.filter(function (p) { return p.id !== action.payload; });
-      // ✅ حذف من Firebase
-      fbDeleteProperty(action.payload).catch(err => console.error("❌ Firebase delete:", err));
       break;
 
-    // ✅ العملاء - تكتب في Firebase
+    // ✅ العملاء - State فقط
     case "ADD_CLIENT":
       s.clients = s.clients.concat([action.payload]);
-      fbAddClient(action.payload).catch(err => console.error("❌ Firebase add client:", err));
       break;
     case "UPDATE_CLIENT":
       s.clients = s.clients.map(function (c) {
@@ -105,29 +89,24 @@ function reducer(state: AppState, action: Action): AppState {
         }
         return r;
       });
-      fbUpdateClient(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update client:", err));
       break;
     case "DELETE_CLIENT":
       s.clients = s.clients.filter(function (c) { return c.id !== action.payload; });
       s.requests = s.requests.filter(function (r) { return r.clientId !== action.payload; });
-      fbDeleteClient(action.payload).catch(err => console.error("❌ Firebase delete client:", err));
       break;
 
-    // ✅ الطلبات - تكتب في Firebase
+    // ✅ الطلبات - State فقط
     case "ADD_REQUEST":
       s.requests = s.requests.concat([action.payload]);
-      fbAddRequest(action.payload).catch(err => console.error("❌ Firebase add request:", err));
       break;
     case "UPDATE_REQUEST":
       s.requests = s.requests.map(function (r) {
         if (r.id === action.payload.id) return action.payload;
         return r;
       });
-      fbUpdateRequest(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update request:", err));
       break;
     case "DELETE_REQUEST":
       s.requests = s.requests.filter(function (r) { return r.id !== action.payload; });
-      fbDeleteRequest(action.payload).catch(err => console.error("❌ Firebase delete request:", err));
       break;
 
     case "TOGGLE_FAV":
