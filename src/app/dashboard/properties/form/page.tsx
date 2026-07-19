@@ -1,103 +1,116 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useApp } from "@/contexts/AppContext";
+import { useAppContext } from "@/contexts/AppContext";
 import type { Property } from "@/lib/types";
 
-const LS = {
-  padding: "11px 14px",
-  background: "#0f172a",
-  border: "1.5px solid #2d3a4d",
-  borderRadius: "12px",
-  color: "#f8fafc",
-  fontSize: "14px",
-  width: "100%",
-  outline: "none",
-  fontFamily: "Cairo, sans-serif",
-};
+function toNum(v: string | number): number {
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+}
 
-const LB = {
-  display: "block",
-  fontSize: "13px",
-  fontWeight: "600",
-  color: "#cbd5e1",
-  marginBottom: "6px",
-};
-
-function PropertyFormContent() {
+function ClientFormContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { state, dispatch, getMatches } = useApp();
-  const id = searchParams.get("id");
-  const existingProp = id ? state.properties.find((p) => p.id === id) : null;
+  const { state, dispatch } = useAppContext();
+  const editId = searchParams.get("id");
+  const existingProp = editId ? state.properties.find((p) => p.id === editId) : null;
+  const isEdit = !!existingProp;
 
+  // ✅✅✅ حالة النموذج - مع الحقول الجديدة للمالك:
   const [form, setForm] = useState({
-    operation: "بيع",
-    propertyType: "شقة",
-    status: "متوفر",
-    city: "",
-    district: "",
-    address: "",
-    price: "",
-    area: "",
-    rooms: "",
-    salons: "",
-    bathrooms: "",
-    kitchens: "",
-    floor: "",
-    year: "",
-    facade: "",
-    view: "",
-    garage: false,
-    elevator: false,
-    balcony: false,
-    garden: false,
-    pool: false,
-    guard: false,
-    negotiable: false,
-    featured: false,
-    rent: "",
-    mortgage: "",
-    video: "",
-    description: "",
+    operation: (existingProp?.operation as Property["operation"]) || "بيع",
+    propertyType: existingProp?.propertyType || "",
+    city: existingProp?.city || "",
+    district: existingProp?.district || "",
+    address: existingProp?.address || "",
+    price: String(existingProp?.price || ""),
+    area: String(existingProp?.area || ""),
+    rooms: String(existingProp?.rooms || ""),
+    salons: String(existingProp?.salons || "0"),
+    bathrooms: String(existingProp?.bathrooms || "0"),
+    kitchens: String(existingProp?.kitchens || "0"),
+    floor: String(existingProp?.floor || "0"),
+    garage: existingProp?.garage || false,
+    elevator: existingProp?.elevator || false,
+    balcony: existingProp?.balcony || false,
+    garden: existingProp?.garden || false,
+    pool: existingProp?.pool || false,
+    guard: existingProp?.guard || false,
+    facade: existingProp?.facade || "",
+    view: existingProp?.view || "",
+    year: String(existingProp?.year || ""),
+    status: (existingProp?.status as Property["status"]) || "متوفر",
+    negotiable: existingProp?.negotiable || false,
+    rent: String(existingProp?.rent || ""),
+    mortgage: String(existingProp?.mortgage || ""),
+    images: existingProp?.images || ["/placeholder.jpg"],
+    video: existingProp?.video || "",
+    description: existingProp?.description || "",
+    featured: existingProp?.featured || false,
+    
+    // ✅✅✅ الحقول الجديدة - صاحب العقار:
+    ownerName: existingProp?.ownerName || "",
+    ownerPhone: existingProp?.ownerPhone || "",
+    ownerWhatsapp: existingProp?.ownerWhatsapp || "",
   });
 
-  const [imageUrls, setImageUrls] = useState(
-    existingProp ? existingProp.images : []
-  );
-  const [newImgUrl, setNewImgUrl] = useState("");
-  const [matches, setMatches] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>(existingProp?.images || ["/placeholder.jpg"]);
 
-  const u = (key: string, value: string | boolean) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  useEffect(() => {
+    if (existingProp?.images) {
+      setPreviewImages(existingProp.images);
+    }
+  }, [existingProp]);
 
-  const addImage = () => {
-    const url = newImgUrl.trim();
-    if (url.length > 10) {
-      setImageUrls([...imageUrls, url]);
-      setNewImgUrl("");
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setForm((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const removeImage = (index: number) => {
-    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  // ✅ دالة رفع الصور (يمكن تطويرها لاحقاً لرفع فعلي)
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: string[] = [...form.images];
+    
+    Array.from(files).forEach((file) => {
+      // حالياً نستخدم URL.createObjectURL (محلي)
+      // TODO: لاحقاً ارفع الصورة واحفظ الرابط
+      const url = URL.createObjectURL(file);
+      newImages.push(url);
+    });
+
+    setForm((prev) => ({ ...prev, images: newImages }));
+    setPreviewImages(newImages);
   };
 
-  const toNum = (v: string) => {
-    const n = parseInt(v);
-    return isNaN(n) ? 0 : n;
+  const removeImage = (idx: number) => {
+    const newImages = form.images.filter((_, i) => i !== idx);
+    setForm((prev) => ({ ...prev, images: newImages }));
+    setPreviewImages(newImages);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const now = new Date().toISOString().split("T")[0];
 
-    const prop: Property = {
-      id: id || "P" + String(state.propCounter).padStart(3, "0"),
+    const now = new Date();
+    
+    // ✅✅✅ كائن العقار مع الحقول الجديدة:
+    const propertyData: Property = {
+      id: existingProp?.id || String(Date.now()),
       operation: form.operation as Property["operation"],
       propertyType: form.propertyType,
-      status: form.status as Property["status"],
       city: form.city,
       district: form.district,
       address: form.address,
@@ -107,449 +120,527 @@ function PropertyFormContent() {
       salons: toNum(form.salons),
       bathrooms: toNum(form.bathrooms),
       kitchens: toNum(form.kitchens),
-     floor: toNum(form.floor),
-      year: toNum(form.year),
-      facade: form.facade,
-      view: form.view,
+      floor: toNum(form.floor),
       garage: form.garage,
       elevator: form.elevator,
       balcony: form.balcony,
       garden: form.garden,
       pool: form.pool,
       guard: form.guard,
+      facade: form.facade,
+      view: form.view,
+      year: toNum(form.year),
+      status: form.status as Property["status"],
       negotiable: form.negotiable,
-      featured: form.featured,
       rent: toNum(form.rent),
       mortgage: toNum(form.mortgage),
-      images:
-        imageUrls.length > 0
-          ? imageUrls
-          : ["https://picsum.photos/seed/default/600/400.jpg"],
+      images: form.images.length > 0 ? form.images : ["/placeholder.jpg"],
       video: form.video,
       description: form.description,
-     // حول السطر 130-132، اجعلها هكذا:
+      featured: form.featured,
+      createdAt: existingProp ? new Date(existingProp.createdAt) : now,
+      updatedAt: now,
 
-createdAt: (existingProp?.createdAt 
-  ? new Date(existingProp.createdAt as string | Date) 
-  : new Date()) as Date,
-
-updatedAt: new Date() as Date,  // ← تأكد من إضافة as Date هنا أيضاً
+      // ✅✅✅ حقول صاحب العقار:
+      ownerName: form.ownerName.trim() || undefined,
+      ownerPhone: form.ownerPhone.trim() || undefined,
+      ownerWhatsapp: form.ownerWhatsapp.trim() || undefined,
     };
 
-    if (id) {
-      dispatch({ type: "UPDATE_PROPERTY", payload: prop });
+    if (isEdit) {
+      dispatch({ type: "UPDATE_PROPERTY", payload: propertyData });
+      dispatch({ type: "SHOW_TOAST", payload: { message: "تم تحديث العقار بنجاح", type: "success" } });
     } else {
-      dispatch({ type: "ADD_PROPERTY", payload: prop });
+      dispatch({ type: "ADD_PROPERTY", payload: propertyData });
+      dispatch({ type: "SHOW_TOAST", payload: { message: "تم إضافة العقار بنجاح", type: "success" } });
     }
 
-    const m = getMatches(prop);
-    if (m.length > 0) {
-      setMatches(m);
-      dispatch({
-        type: "SHOW_TOAST",
-        payload: {
-          message: "يوجد " + m.length + " عميل يبحثون عن هذا العقار!",
-          type: "success",
-        },
-      });
-      return;
-    }
-
-    dispatch({
-      type: "SHOW_TOAST",
-      payload: {
-        message: id ? "تم تعديل العقار" : "تم إضافة العقار",
-        type: "success",
-      },
-    });
     router.push("/dashboard/properties");
   };
 
-  const selStyle = {
-    ...LS,
-    cursor: "pointer",
-    appearance: "none" as const,
-    backgroundImage:
-      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "left 12px center",
-    paddingLeft: "32px",
-  };
-
-  const optStyle = { background: "#1e293b", color: "#f8fafc" };
-
-  const types = [
-    { v: "شقة", l: "شقة" },
-    { v: "شقة مفروشة", l: "شقة مفروشة" },
-    { v: "فيلا", l: "فيلا" },
-    { v: "فيلا مفروشة", l: "فيلا مفروشة" },
-    { v: "أرض", l: "أرض" },
-    { v: "محل تجاري", l: "محل تجاري" },
-    { v: "مكتب", l: "مكتب" },
-    { v: "مستودع", l: "مستودع" },
-    { v: "مزرعة", l: "مزرعة" },
-  ];
-
-  const ops = [
-    { v: "بيع", l: "بيع" },
-    { v: "كراء", l: "كراء" },
-    { v: "رهن", l: "رهن" },
-  ];
-
-  const statuses = [
-    { v: "متوفر", l: "متوفر" },
-    { v: "محجوز", l: "محجوز" },
-    { v: "تم البيع", l: "تم البيع" },
-    { v: "تم الكراء", l: "تم الكراء" },
-  ];
-
-  const floors = [
-    { v: "", l: "اختر الطابق" },
-    { v: "أرضي", l: "أرضي" },
-    { v: "1", l: "1" },
-    { v: "2", l: "2" },
-    { v: "3", l: "3" },
-    { v: "4", l: "4" },
-    { v: "5", l: "5" },
-    { v: "6", l: "6" },
-    { v: "7", l: "7" },
-    { v: "8", l: "8+" },
-  ];
-
-  const row4 = { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "20px" };
-  const row3 = { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px", marginBottom: "20px" };
-
   return (
-    <div style={{ maxWidth: "900px" }}>
-      <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc", marginBottom: "24px" }}>
-        {id ? "تعديل عقار" : "إضافة عقار جديد"}
-      </h1>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          background: "linear-gradient(145deg, #1e293b, #1a2332)",
-          border: "1px solid #2d3a4d",
-          borderRadius: "18px",
-          padding: "28px",
-        }}
-      >
-        {/* العملية والنوع والحالة */}
-        <div style={row3}>
-          <div>
-            <label style={LB}>نوع العملية</label>
-            <select style={selStyle} value={form.operation} onChange={(e) => u("operation", e.target.value)}>
-              {ops.map((o) => (
-                <option key={o.v} value={o.v} style={optStyle}>{o.l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={LB}>نوع العقار</label>
-            <select style={selStyle} value={form.propertyType} onChange={(e) => u("propertyType", e.target.value)}>
-              {types.map((t) => (
-                <option key={t.v} value={t.v} style={optStyle}>{t.l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={LB}>الحالة</label>
-            <select style={selStyle} value={form.status} onChange={(e) => u("status", e.target.value)}>
-              {statuses.map((s) => (
-                <option key={s.v} value={s.v} style={optStyle}>{s.l}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* المدينة والحي والعنوان */}
-        <div style={row3}>
-          <div>
-            <label style={LB}>المدينة *</label>
-            <input style={LS} value={form.city} onChange={(e) => u("city", e.target.value)} placeholder="الدار البيضاء" />
-          </div>
-          <div>
-            <label style={LB}>الحي *</label>
-            <input style={LS} value={form.district} onChange={(e) => u("district", e.target.value)} placeholder="بوسكورة" />
-          </div>
-          <div>
-            <label style={LB}>العنوان</label>
-            <input style={LS} value={form.address} onChange={(e) => u("address", e.target.value)} placeholder="شارع..." />
-          </div>
-        </div>
-
-        {/* المساحة والغرف والصالونات والحمامات */}
-        <div style={row4}>
-          <div>
-            <label style={LB}>المساحة (م²)</label>
-            <input style={LS} value={form.area} onChange={(e) => u("area", e.target.value)} placeholder="120" />
-          </div>
-          <div>
-            <label style={LB}>عدد الغرف</label>
-            <input style={LS} value={form.rooms} onChange={(e) => u("rooms", e.target.value)} placeholder="3" />
-          </div>
-          <div>
-            <label style={LB}>الصالونات</label>
-            <input style={LS} value={form.salons} onChange={(e) => u("salons", e.target.value)} placeholder="2" />
-          </div>
-          <div>
-            <label style={LB}>الحمامات</label>
-            <input style={LS} value={form.bathrooms} onChange={(e) => u("bathrooms", e.target.value)} placeholder="2" />
-          </div>
-        </div>
-
-        {/* المطابخ والطابق وسنة البناء والواجهة */}
-        <div style={row4}>
-          <div>
-            <label style={LB}>المطابخ</label>
-            <input style={LS} value={form.kitchens} onChange={(e) => u("kitchens", e.target.value)} placeholder="1" />
-          </div>
-          <div>
-            <label style={LB}>الطابق</label>
-            <select style={selStyle} value={form.floor} onChange={(e) => u("floor", e.target.value)}>
-              {floors.map((f) => (
-                <option key={f.v} value={f.v} style={optStyle}>{f.l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={LB}>سنة البناء</label>
-            <input style={LS} value={form.year} onChange={(e) => u("year", e.target.value)} placeholder="2024" />
-          </div>
-          <div>
-            <label style={LB}>الواجهة</label>
-            <input style={LS} value={form.facade} onChange={(e) => u("facade", e.target.value)} placeholder="جنوب، شمال..." />
-          </div>
-        </div>
-
-        {/* السعر */}
-        <div style={row3}>
-          <div>
-            <label style={LB}>السعر (درهم) *</label>
-            <input style={LS} value={form.price} onChange={(e) => u("price", e.target.value)} placeholder="55000000" />
-          </div>
-          <div>
-            <label style={LB}>السومة الشهرية</label>
-            <input style={LS} value={form.rent} onChange={(e) => u("rent", e.target.value)} placeholder="للكراء" />
-          </div>
-          <div>
-            <label style={LB}>مبلغ الرهن</label>
-            <input style={LS} value={form.mortgage} onChange={(e) => u("mortgage", e.target.value)} placeholder="للرهن" />
-          </div>
-        </div>
-
-        {/* المميزات */}
-        <div style={{ marginBottom: "20px" }}>
-          <label style={{ ...LB, marginBottom: "10px" }}>المميزات</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-            {[
-              ["negotiable", "قابل للتفاوض"],
-              ["garage", "مرآب"],
-              ["elevator", "مصعد"],
-              ["balcony", "بلكون"],
-              ["garden", "حديقة"],
-              ["pool", "مسبح"],
-              ["guard", "حراسة"],
-              ["featured", "مميز"],
-            ].map(([k, l]) => (
-              <label key={k} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", color: "#cbd5e1" }}>
-                <input
-                  type="checkbox"
-                  checked={!!(form as Record<string, unknown>)[k]}
-                  onChange={(e) => u(k, e.target.checked)}
-                  style={{ width: "18px", height: "18px", accentColor: "#10b981", borderRadius: "4px" }}
-                />
-                {l}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* الصور */}
-        <div style={{ marginBottom: "20px" }}>
-          <label style={{ ...LB, marginBottom: "10px" }}>
-            صور العقار ({imageUrls.length}/20)
-          </label>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            {imageUrls.map((img, i) => (
-              <div
-                key={i}
-                style={{
-                  position: "relative",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  border: "1px solid #2d3a4d",
-                }}
-              >
-                <img
-                  src={img}
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: "100px",
-                    objectFit: "cover",
-                  }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "https://picsum.photos/seed/fallback/600/400.jpg";
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    left: "4px",
-                    width: "22px",
-                    height: "22px",
-                    borderRadius: "50%",
-                    background: "rgba(239,68,68,0.9)",
-                    border: "none",
-                    color: "white",
-                    cursor: "pointer",
-                    fontSize: "11px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input
-              style={{ ...LS, flex: 1 }}
-              value={newImgUrl}
-              onChange={(e) => setNewImgUrl(e.target.value)}
-              placeholder="الصق رابط الصورة هنا"
-            />
-            <button
-              type="button"
-              onClick={addImage}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #059669, #10b981)",
-                color: "white",
-                border: "none",
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "Cairo",
-                fontSize: "14px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              + إضافة
-            </button>
-          </div>
-          <p style={{ fontSize: "11px", color: "#64748b", marginTop: "6px" }}>
-            لرفع الصور مجاناً: اذهب إلى imgbb.com وانسخ رابط الصورة المباشر
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="bg-slate-800 rounded-2xl p-6 md:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            {isEdit ? "✏️ تعديل عقار" : "➕ إضافة عقار جديد"}
+          </h1>
+          <p className="text-gray-400">
+            {isEdit ? "تعديل بيانات العقار" : "أدخل بيانات العقار الجديد"}
           </p>
         </div>
 
-        {/* رابط الفيديو */}
-        <div style={{ marginBottom: "20px" }}>
-          <label style={LB}>رابط الفيديو</label>
-          <input
-            style={LS}
-            value={form.video}
-            onChange={(e) => u("video", e.target.value)}
-            placeholder="https://youtube.com/..."
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* ===== القسم 1: المعلومات الأساسية ===== */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+              📋 المعلومات الأساسية
+            </h2>
 
-        {/* الوصف */}
-        <div style={{ marginBottom: "24px" }}>
-          <label style={LB}>الوصف</label>
-          <textarea
-            style={{ ...LS, height: "100px", resize: "vertical" }}
-            value={form.description}
-            onChange={(e) => u("description", e.target.value)}
-            placeholder="وصف تفصيلي للعقار..."
-          />
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* نوع العملية */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">نوع العملية *</label>
+                <select
+                  name="operation"
+                  value={form.operation}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  <option value="بيع">بيع</option>
+                  <option value="كراء">كراء</option>
+                  <option value="رهن">رهن</option>
+                </select>
+              </div>
 
-        {/* إشعار المطابقة */}
-        {matches.length > 0 && (
-          <div
-            style={{
-              marginBottom: "20px",
-              padding: "16px",
-              borderRadius: "14px",
-              background: "rgba(245,158,11,0.1)",
-              border: "1px solid rgba(245,158,11,0.25)",
-            }}
-          >
-            <p style={{ fontWeight: 700, color: "#fbbf24", marginBottom: "6px" }}>
-              يوجد {matches.length} عميل يبحثون عن هذا العقار!
-            </p>
-            <p style={{ fontSize: "13px", color: "#fde68a" }}>
-              {matches.join(" · ")}
-            </p>
+              {/* نوع العقار */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">نوع العقار *</label>
+                <input
+                  type="text"
+                  name="propertyType"
+                  value={form.propertyType}
+                  onChange={handleChange}
+                  required
+                  placeholder="مثال: شقة، فيلا، محل..."
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* المدينة */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">المدينة *</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  required
+                  placeholder="مثال: الدار البيضاء"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* District */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الحي / المنطقة</label>
+                <input
+                  type="text"
+                  name="district"
+                  value={form.district}
+                  onChange={handleChange}
+                  placeholder="مثال: المعاريف"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* العنوان */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">العنوان التفصيلي</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  placeholder="العنوان الكامل..."
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* الأزرار */}
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            type="submit"
+          {/* ===== القسم 2: السعر والمساحة ===== */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+              💰 السعر والمساحة
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* السعر */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">السعر (درهم) *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* الكراء */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الكراء/شهر (درهم)</label>
+                <input
+                  type="number"
+                  name="rent"
+                  value={form.rent}
+                  onChange={handleChange}
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* الرهن */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الرهن (درهم)</label>
+                <input
+                  type="number"
+                  name="mortgage"
+                  value={form.mortgage}
+                  onChange={handleChange}
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* المساحة */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">المساحة (م²) *</label>
+                <input
+                  type="number"
+                  name="area"
+                  value={form.area}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* الغرف */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">عدد الغرف *</label>
+                <input
+                  type="number"
+                  name="rooms"
+                  value={form.rooms}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              {/* الطابق */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الطابق</label>
+                <input
+                  type="number"
+                  name="floor"
+                  value={form.floor}
+                  onChange={handleChange}
+                  min="0"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* قابل للتفاوض */}
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="negotiable"
+                name="negotiable"
+                checked={form.negotiable}
+                onChange={handleChange}
+                className="w-5 h-5 rounded bg-slate-700 text-emerald-500 focus:ring-emerald-500"
+              />
+              <label htmlFor="negotiable" className="text-gray-300">قابل للتفاوض</label>
+            </div>
+          </div>
+
+          {/* ===== القسم 3: المواصفات الداخلية ===== */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+              🏠 المواصفات الداخلية
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الصالونات</label>
+                <input type="number" name="salons" value={form.salons} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الحمامات</label>
+                <input type="number" name="bathrooms" value={form.bathrooms} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">المطابخ</label>
+                <input type="number" name="kitchens" value={form.kitchens} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">سنة البناء</label>
+                <input type="number" name="year" value={form.year} onChange={handleChange} min="1900" max="2030" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+              </div>
+            </div>
+
+            {/* المميزات */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { key: "garage", label: "🚗 مرآب", field: "garage" },
+                { key: "elevator", label: "🛗 مصعد", field: "elevator" },
+                { key: "balcony", label: "🌿 بلكون", field: "balcony" },
+                { key: "garden", label: "🌳 حديقة", field: "garden" },
+                { key: "pool", label: "🏊 مسبح", field: "pool" },
+                { key: "guard", label: "👮 حراسة", field: "guard" },
+              ].map((item) => (
+                <label key={item.key} className="flex items-center gap-3 bg-slate-700/50 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition">
+                  <input
+                    type="checkbox"
+                    name={item.field}
+                    checked={(form as any)[item.field]}
+                    onChange={handleChange}
+                    className="w-5 h-5 rounded bg-slate-600 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span className="text-gray-300">{item.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* الواجهة والمنظر */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الواجهة</label>
+                <select name="facade" value={form.facade} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                  <option value="">اختر الواجهة</option>
+                  <option value="شمال">شمال</option>
+                  <option value="جنوب">جنوب</option>
+                  <option value="شرق">شرق</option>
+                  <option value="غرب">غرب</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">المنظر</label>
+                <select name="view" value={form.view} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                  <option value="">اختر المنظر</option>
+                  <option value="شارع">شارع</option>
+                  <option value="حديقة">حديقة</option>
+                  <option value="بحر">بحر</option>
+                  <option value="مدينة">مدينة</option>
+                </select>
+              </div>
+            </div>
+
+            {/* الحالة */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">حالة العقار</label>
+              <select name="status" value={form.status} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="متوفر">متوفر</option>
+                <option value="محجوز">محجوز</option>
+                <option value="تم البيع">تم البيع</option>
+                <option value="تم الكراء">تم الكراء</option>
+              </select>
+            </div>
+          </div>
+
+          {/* ===== القسم 4: الصور ===== */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+              🖼️ صور العقار
+            </h2>
+
+            {/* رفع صور جديدة */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">إضافة صور</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-emerald-500 hover:bg-slate-700/30 transition"
+              >
+                <span className="text-4xl mb-2 block">📷</span>
+                <span className="text-gray-400">اضغط لاختيار الصور</span>
+                <span className="text-xs text-gray-500 block mt-1">(يمكن اختيار عدة صور)</span>
+              </button>
+            </div>
+
+            {/* معاينة الصور */}
+            {previewImages.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {previewImages.map((img, idx) => (
+                  <div key={idx} className="relative group rounded-lg overflow-hidden">
+                    <img src={img} alt={`صورة ${idx + 1}`} className="w-full h-32 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full opacity-0 group-hover:opacity-100 transition text-sm font-bold"
+                    >
+                      ✕
+                    </button>
+                    <span className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      {idx + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ===== القسم 5: الفيديو والوصف ===== */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
+              🎬 الفيديو والوصف
+            </h2>
+
+            {/* رابط الفيديو */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">رابط الفيديو (YouTube أو غيره)</label>
+              <input
+                type="url"
+                name="video"
+                value={form.video}
+                onChange={handleChange}
+                placeholder="https://youtube.com/watch?..."
+                dir="ltr"
+                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            {/* الوصف */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">وصف العقار</label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={5}
+                placeholder="اكتب وصفاً تفصيلياً للعقار..."
+                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+              />
+            </div>
+
+            {/* مميز */}
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={form.featured}
+                onChange={handleChange}
+                className="w-5 h-5 rounded bg-slate-700 text-amber-500 focus:ring-amber-500"
+              />
+              <label htmlFor="featured" className="text-gray-300">⭐ عرض كعقار مميز</label>
+            </div>
+          </div>
+
+          {/* ✅✅✅ القسم 6: معلومات صاحب العقار (خاص - لا يظهر للزوار) */}
+          <div 
+            className="space-y-6 p-6 rounded-xl border-2 border-dashed"
             style={{
-              padding: "12px 32px",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #059669, #10b981)",
-              color: "white",
-              border: "none",
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Cairo",
-              fontSize: "15px",
+              background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(69, 26, 3, 0.3) 100%)',
+              borderColor: '#f59e0b'
             }}
           >
-            {id ? "تحديث" : "حفظ العقار"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/properties")}
-            style={{
-              padding: "12px 24px",
-              borderRadius: "12px",
-              background: "transparent",
-              color: "#10b981",
-              border: "2px solid #10b981",
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Cairo",
-              fontSize: "15px",
-            }}
-          >
-            إلغاء
-          </button>
-        </div>
-      </form>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🔒</span>
+              <div>
+                <h2 className="text-xl font-bold text-amber-400">معلومات صاحب العقار</h2>
+                <p className="text-xs text-amber-200/60">هذه المعلومات خاصة - تظهر فقط للمدير</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* اسم صاحب العقار */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  👤 اسم صاحب العقار
+                </label>
+                <input
+                  type="text"
+                  name="ownerName"
+                  value={form.ownerName}
+                  onChange={handleChange}
+                  placeholder="مثال: محمد العلوي"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
+
+              {/* رقم الهاتف */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  ☎️ رقم الهاتف
+                </label>
+                <input
+                  type="tel"
+                  name="ownerPhone"
+                  value={form.ownerPhone}
+                  onChange={handleChange}
+                  placeholder="0661234567"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
+
+              {/* رقم الواتساب */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  💬 رقم الواتساب <span className="text-gray-500">(اختياري)</span>
+                </label>
+                <input
+                  type="tel"
+                  name="ownerWhatsapp"
+                  value={form.ownerWhatsapp}
+                  onChange={handleChange}
+                  placeholder="اتركه فارغاً = نفس الهاتف"
+                  dir="ltr"
+                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* تنبيه */}
+            <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-3 flex items-start gap-3">
+              <span className="text-amber-400">ℹ️</span>
+              <p className="text-sm text-amber-200/80">
+                هذه المعلومات لن تظهر للزوار العاديين. ستظهر فقط للمدير في لوحة التحكم وصفحة تفاصيل العقار.
+              </p>
+            </div>
+          </div>
+
+          {/* ===== أزرار الإجراءات ===== */}
+          <div className="flex gap-4 pt-4 border-t border-slate-700">
+            <button
+              type="submit"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02]"
+            >
+              {isEdit ? "💾 حفظ التعديلات" : "➕ إضافة العقار"}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
 
 export default function PropertyFormPage() {
   return (
-    <Suspense
-      fallback={
-        <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
-          جاري التحميل...
-        </div>
-      }
-    >
-      <PropertyFormContent />
+    <Suspense fallback={<div className="text-white text-center py-20">جاري التحميل...</div>}>
+      <ClientFormContent />
     </Suspense>
   );
 }
