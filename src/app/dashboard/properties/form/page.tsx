@@ -127,8 +127,9 @@ function PropertyFormContent() {
           : ["https://picsum.photos/seed/default/600/400.jpg"],
       video: form.video,
       description: form.description,
-      createdAt: existingProp ? existingProp.createdAt : now,
-      updatedAt: now,
+     // استخدم new Date() لتحويل أي شيء إلى Date
+createdAt: existingProp ? new Date(existingProp.createdAt) : now,
+updatedAt: now,  // هذا صحيح إذا كان now من نوع Date
     };
 
     if (id) {
