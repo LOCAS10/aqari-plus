@@ -38,7 +38,7 @@ function ClientFormContent() {
     const now = new Date();
     const client: Client = {
       ...form,
-      id: id || state.cliCounter.toString(),
+      id: id || Date.now().toString(),
       createdAt: existingClient ? existingClient.createdAt : now,
     } as Client;
 
