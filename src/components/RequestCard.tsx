@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Request } from "@/lib/types";
 
 const formatPrice = (n: number) => {
@@ -24,6 +25,9 @@ export default function RequestCard({ request }: { request: Request }) {
     رهن: "🏦",
   };
 
+  // ✅✅✅ البحث عن العميل للحصول على ID
+  // سنستخدم clientId من الطلب لبناء الرابط
+
   return (
     <div className="bg-slate-800 rounded-xl p-6 shadow-lg text-white">
       <div className="flex items-center gap-3 mb-4">
@@ -31,7 +35,14 @@ export default function RequestCard({ request }: { request: Request }) {
           {opIcons[request.operation]}
         </span>
         <div>
-          <div className="font-bold">{request.clientName}</div>
+          {/* ✅✅✅ اسم العميل أصبح رابطاً نقّالاً! */}
+          <Link 
+            href={`/dashboard/clients?id=${request.clientId}`}
+            className="font-bold hover:text-emerald-400 transition-colors underline decoration-dotted underline-offset-2 cursor-pointer"
+            title="اضغط لعرض بيانات العميل"
+          >
+            👤 {request.clientName}
+          </Link>
           <div className="text-gray-400 text-sm">{request.operation}</div>
         </div>
       </div>
@@ -61,6 +72,14 @@ export default function RequestCard({ request }: { request: Request }) {
           </span>
         )}
       </div>
+
+      {/* ✅✅✅ زر سريع لعرض العميل */}
+      <Link 
+        href={`/dashboard/clients?id=${request.clientId}`}
+        className="block w-full text-center bg-slate-700 hover:bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium transition mb-3"
+      >
+        👤 عرض بيانات العميل →
+      </Link>
 
       {request.notes && (
         <div className="text-gray-400 text-sm bg-slate-700 p-3 rounded-lg">
