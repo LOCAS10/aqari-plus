@@ -1,9 +1,6 @@
 "use client";
 
-"use client";
-
-// أو أفضل:
-import React, { createContext, useContext, useReducer, useRef, ReactNode } from "react";
+import React, { createContext, useContext, useReducer, useRef, useEffect, ReactNode } from "react";
 import { Property, Client, Request, User } from "@/lib/types";
 import { sampleProperties, sampleClients, sampleRequests, sampleUsers, initialCounters } from "@/lib/data";
 
@@ -63,7 +60,7 @@ function loadState(): AppState {
     console.error("Error loading state:", error);
   }
   
-  return initialState; // ✅ ← أضف هذا السطر قبل قوس الإغلاق
+  return initialState;
 }
 
 function saveState(state: AppState) {
@@ -170,14 +167,14 @@ function reducer(state: AppState, action: Action): AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export var AppProvider = function (props: { children: ReactNode }) {
-  var children = props.children;
-  var loaded = React.useRef(false);
+// ✅✅✅ التصحيح الرئيسي هنا:
+export function AppProvider({ children }: { children: ReactNode }) {
+  // ✅ استخدم destructuring صحيح:
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const loaded = useRef(false);
 
-  var state = useReducer(reducer, initialState);
-  var dispatch = state[1];
-
-  React.useEffect(function () {
+  // ✅ تحميل الحالة الأولية
+  useEffect(function () {
     if (!loaded.current) {
       var saved = loadState();
       dispatch({ type: "LOAD_STATE", payload: saved });
@@ -185,20 +182,22 @@ export var AppProvider = function (props: { children: ReactNode }) {
     }
   }, []);
 
-  React.useEffect(function () {
+  // ✅ حفظ الحالة عند التغيير
+  useEffect(function () {
     if (loaded.current && state) {
-      saveState(state);
+      saveState(state);  // ✅ الآن state هو AppState صحيح!
     }
-  });
+  }, [state]);  // ✅ أضف dependency
 
-  React.useEffect(function () {
+  // ✅ إدارة Toast
+  useEffect(function () {
     if (state && state.toast) {
       var t = setTimeout(function () {
         dispatch({ type: "SHOW_TOAST", payload: null });
       }, 3000);
       return function () { clearTimeout(t); };
     }
-  }, [state && state.toast]);
+  }, [state?.toast]);  // ✅ استخدام optional chaining
 
   var login = function (email: string, password: string): User | null {
     var user: User | null = null;
@@ -230,7 +229,7 @@ export var AppProvider = function (props: { children: ReactNode }) {
         matches.push(req.clientName);
       }
     });
-    var unique = [];
+    var unique: string[] = [];
     matches.forEach(function (m) {
       if (unique.indexOf(m) === -1) unique.push(m);
     });
@@ -246,13 +245,13 @@ export var AppProvider = function (props: { children: ReactNode }) {
   }
 
   return (
-    <AppContext.Provider value={{ state: state, dispatch: dispatch, login: login, getMatches: getMatches }}>
+    <AppContext.Provider value={{ state, dispatch, login, getMatches }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-// ✅ يجب أن يكون موجوداً:
+// ✅ useAppContext hook
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
@@ -260,5 +259,6 @@ export const useAppContext = () => {
   }
   return context;
 };
+
 // ✅ useApp - اسم مستعار
 export const useApp = useAppContext;
