@@ -89,7 +89,7 @@ export async function deleteClient(id: string): Promise<void> {
 
 export const requestsCollection = collection(db, "requests");
 
-export async function getAllRequests(): Request[] {
+export async function getAllRequests(): Promise<Request[]> {
   const snapshot = await getDocs(query(requestsCollection, orderBy("createdAt", "desc")));
   return snapshot.docs.map((doc) => ({
     id: doc.id,
