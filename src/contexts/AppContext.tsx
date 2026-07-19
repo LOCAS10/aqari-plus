@@ -246,8 +246,11 @@ export var AppProvider = function (props: { children: ReactNode }) {
   );
 };
 
-export var useApp = function () {
-  var ctx = useContext(AppContext);
-  if (!ctx) throw new Error("useApp must be used within AppProvider");
-  return ctx;
+// ✅ يجب أن يكون موجوداً:
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within AppProvider');
+  }
+  return context;
 };
