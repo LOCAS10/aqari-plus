@@ -82,7 +82,7 @@ const reducer = (state: AppState, action: Action): AppState => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(reducer, null);
+ const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     const saved = loadState();
