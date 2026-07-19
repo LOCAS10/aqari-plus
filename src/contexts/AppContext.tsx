@@ -38,10 +38,10 @@ type Action =
   | { type: "UPDATE_CLIENT"; payload: Client }
   | type: "DELETE_CLIENT"; payload: string }
   | { type: "ADD_REQUEST"; payload: Request }
-  | { type: "UPDATE_REQUEST"; payload: Request }
+  | type: "UPDATE_REQUEST"; payload: Request }
   | { type: "DELETE_REQUEST"; payload: string }
   | { type: "TOGGLE_FAV"; payload: string }
-  | { type: "SHOW_TOAST"; payload: Toast | null }
+  | type: "SHOW_TOAST"; payload: Toast | null }
   | { type: "LOAD_STATE"; payload: AppState };
 
 const initialState: AppState = {
