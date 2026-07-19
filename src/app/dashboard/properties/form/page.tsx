@@ -194,6 +194,7 @@ function PropertyFormContent() {
         </div>
 
         {/* الصف 9: الوصف */}
+               {/* الصف 9: الوصف */}
         <div style={{ marginBottom: "24px" }}>
           <label style={LB}>الوصف</label>
           <textarea style={{ ...LS, height: "100px", resize: "vertical" }} value={form.description || ""} onChange={(e) => u("description", e.target.value)} placeholder="وصف تفصيلي للعقار..." />
@@ -202,11 +203,29 @@ function PropertyFormContent() {
         {/* إشعار المطابقة */}
         {matches.length > 0 && (
           <div style={{ marginBottom: "20px", padding: "16px", borderRadius: "14px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)" }}>
-            <p style={{ fontWeight: 700, color: "#fbbf24", marginBottom: "6px" }}><i className="fas fa-bell" style={{ marginLeft: "8px" }} />يوجد {matches.length} عميل يبحثون عن هذا العقار!</p>
+            <p style={{ fontWeight: 700, color: "#fbbf24", marginBottom: "6px" }}>يوجد {matches.length} عميل يبحثون عن هذا العقار!</p>
             <p style={{ fontSize: "13px", color: "#fde68a" }}>{matches.join(" · ")}</p>
           </div>
         )}
 
         {/* الأزرار */}
         <div style={{ display: "flex", gap: "12px" }}>
-          <button type="submit
+          <button type="submit" className="btn btn-m" style={{ padding: "12px 32px", fontSize: "15px" }}>
+            <i className="fas fa-save" style={{ marginLeft: "8px" }}></i>{id ? "تحديث" : "حفظ العقار"}
+          </button>
+          <button type="button" onClick={() => router.push("/dashboard/properties")} className="btn btn-o" style={{ padding: "12px 24px", fontSize: "15px" }}>
+            إلغاء
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export default function PropertyFormPage() {
+  return (
+    <Suspense fallback={<div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>جاري التحميل...</div>}>
+      <PropertyFormContent />
+    </Suspense>
+  );
+}
