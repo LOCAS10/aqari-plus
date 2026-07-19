@@ -31,7 +31,7 @@ function RequestFormContent() {
 
     const request: Request = {
       ...form,
-      id: state.reqCounter.toString(),
+     id: Date.now().toString(),
       clientId,
       clientName: client.name,
       createdAt: new Date(),
