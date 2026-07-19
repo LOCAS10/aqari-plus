@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppContext } from "@/contexts/AppContext";
 import type { Property } from "@/lib/types";
+// ✅✅✅ إضافة استيراد Firebase:
+import { addProperty as fbAddProperty, updateProperty as fbUpdateProperty } from "@/lib/firestore";
 
 function toNum(v: string | number): number {
   const n = Number(v);
@@ -50,17 +52,14 @@ function ClientFormContent() {
     description: existingProp?.description || "",
     featured: existingProp?.featured || false,
     
-    // حقول صاحب العقار
     ownerName: existingProp?.ownerName || "",
     ownerPhone: existingProp?.ownerPhone || "",
     ownerWhatsapp: existingProp?.ownerWhatsapp || "",
   });
 
-  // ✅✅✅ حقل إدخال رابط الصورة الواحد
   const [imageUrlInput, setImageUrlInput] = useState("");
-  
-  // الصور المعروضة
   const [previewImages, setPreviewImages] = useState<string[]>(existingProp?.images || []);
+  const [isSaving, setIsSaving] = useState(false); // ✅ حالة الحفظ
 
   useEffect(() => {
     if (existingProp?.images) {
@@ -80,31 +79,22 @@ function ClientFormContent() {
     }
   };
 
-  // ✅✅✅ دالة إضافة رابط صورة
   const addImageUrl = () => {
     const url = imageUrlInput.trim();
-    
     if (!url) {
       alert("الرجاء إدخال رابط الصورة أولاً");
       return;
     }
-
-    // التحقق من أن الرابط صحيح
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      alert("الرجاء إدخال رابط صحيح (يجب أن يبدأ بـ http أو https)");
+      alert("الرجاء إدخال رابط صحيح");
       return;
     }
-
-    // إضافة الصورة للقائمة
     const newImages = [...form.images, url];
     setForm((prev) => ({ ...prev, images: newImages }));
     setPreviewImages(newImages);
-    
-    // تفريغ الحقل
     setImageUrlInput("");
   };
 
-  // ✅✅✅ دالة إضافة بالضغط على Enter
   const handleImageKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -112,66 +102,86 @@ function ClientFormContent() {
     }
   };
 
-  // حذف صورة
   const removeImage = (idx: number) => {
     const newImages = form.images.filter((_, i) => i !== idx);
     setForm((prev) => ({ ...prev, images: newImages }));
     setPreviewImages(newImages);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅✅✅ handleSubmit معدّل - يحفظ في Firebase مباشرة!
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const now = new Date();
     
-    const propertyData: Property = {
-      id: existingProp?.id || String(Date.now()),
-      operation: form.operation as Property["operation"],
-      propertyType: form.propertyType,
-      city: form.city,
-      district: form.district,
-      address: form.address,
-      price: toNum(form.price),
-      area: toNum(form.area),
-      rooms: toNum(form.rooms),
-      salons: toNum(form.salons),
-      bathrooms: toNum(form.bathrooms),
-      kitchens: toNum(form.kitchens),
-      floor: toNum(form.floor),
-      garage: form.garage,
-      elevator: form.elevator,
-      balcony: form.balcony,
-      garden: form.garden,
-      pool: form.pool,
-      guard: form.guard,
-      facade: form.facade,
-      view: form.view,
-      year: toNum(form.year),
-      status: form.status as Property["status"],
-      negotiable: form.negotiable,
-      rent: toNum(form.rent),
-      mortgage: toNum(form.mortgage),
-      images: form.images.length > 0 ? form.images : ["/placeholder.jpg"],
-      video: form.video,
-      description: form.description,
-      featured: form.featured,
-      createdAt: existingProp ? new Date(existingProp.createdAt) : now,
-      updatedAt: now,
+    // منع الإرسال المتكرر
+    if (isSaving) return;
+    setIsSaving(true);
 
-      ownerName: form.ownerName.trim() || undefined,
-      ownerPhone: form.ownerPhone.trim() || undefined,
-      ownerWhatsapp: form.ownerWhatsapp.trim() || undefined,
-    };
+    try {
+      const now = new Date();
+      
+      const propertyData: Property = {
+        id: existingProp?.id || Date.now().toString(),
+        operation: form.operation as Property["operation"],
+        propertyType: form.propertyType,
+        city: form.city,
+        district: form.district,
+        address: form.address,
+        price: toNum(form.price),
+        area: toNum(form.area),
+        rooms: toNum(form.rooms),
+        salons: toNum(form.salons),
+        bathrooms: toNum(form.bathrooms),
+        kitchens: toNum(form.kitchens),
+        floor: toNum(form.floor),
+        garage: form.garage,
+        elevator: form.elevator,
+        balcony: form.balcony,
+        garden: form.garden,
+        pool: form.pool,
+        guard: form.guard,
+        facade: form.facade,
+        view: form.view,
+        year: toNum(form.year),
+        status: form.status as Property["status"],
+        negotiable: form.negotiable,
+        rent: toNum(form.rent),
+        mortgage: toNum(form.mortgage),
+        images: form.images.length > 0 ? form.images : ["/placeholder.jpg"],
+        video: form.video,
+        description: form.description,
+        featured: form.featured,
+        createdAt: existingProp ? new Date(existingProp.createdAt) : now,
+        updatedAt: now,
+        ownerName: form.ownerName.trim() || undefined,
+        ownerPhone: form.ownerPhone.trim() || undefined,
+        ownerWhatsapp: form.ownerWhatsapp.trim() || undefined,
+      };
 
-    if (isEdit) {
-      dispatch({ type: "UPDATE_PROPERTY", payload: propertyData });
-      dispatch({ type: "SHOW_TOAST", payload: { message: "تم تحديث العقار بنجاح", type: "success" } });
-    } else {
-      dispatch({ type: "ADD_PROPERTY", payload: propertyData });
-      dispatch({ type: "SHOW_TOAST", payload: { message: "تم إضافة العقار بنجاح", type: "success" } });
+      console.log("🔄 جاري حفظ العقار...");
+      console.log("📊 البيانات:", propertyData);
+
+      if (isEdit && editId) {
+        // ✅ تحديث في Firebase
+        await fbUpdateProperty(editId, propertyData);
+        console.log("✅ تم التحديث في Firebase!");
+        dispatch({ type: "UPDATE_PROPERTY", payload: propertyData });
+        dispatch({ type: "SHOW_TOAST", payload: { message: "✅ تم تحديث العقار!", type: "success" } });
+      } else {
+        // ✅ إضافة جديدة في Firebase
+        const newId = await fbAddProperty(propertyData);
+        console.log("✅ تمت الإضافة في Firebase! ID:", newId);
+        
+        propertyData.id = newId; // استخدام ID من Firebase
+        dispatch({ type: "ADD_PROPERTY", payload: propertyData });
+        dispatch({ type: "SHOW_TOAST", payload: { message: "✅ تم إضافة العقار!", type: "success" } });
+      }
+
+      router.push("/dashboard/properties");
+    } catch (error) {
+      console.error("❌❌❌ خطأ في الحفظ:", error);
+      dispatch({ type: "SHOW_TOAST", payload: { message: "❌ فشل الحفظ: " + error, type: "error" } });
+      setIsSaving(false);
     }
-
-    router.push("/dashboard/properties");
   };
 
   return (
@@ -190,15 +200,12 @@ function ClientFormContent() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* ===== القسم 1: المعلومات الأساسية ===== */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
-              📋 المعلومات الأساسية
-            </h2>
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">📋 المعلومات الأساسية</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">نوع العملية *</label>
-                <select name="operation" value={form.operation} onChange={handleChange} required
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <select name="operation" value={form.operation} onChange={handleChange} required className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="بيع">بيع</option>
                   <option value="كراء">كراء</option>
                   <option value="رهن">رهن</option>
@@ -207,112 +214,77 @@ function ClientFormContent() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">نوع العقار *</label>
-                <input type="text" name="propertyType" value={form.propertyType} onChange={handleChange} required
-                  placeholder="مثال: شقة، فيلا، محل..."
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="text" name="propertyType" value={form.propertyType} onChange={handleChange} required placeholder="مثال: شقة، فيلا، محل..." className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المدينة *</label>
-                <input type="text" name="city" value={form.city} onChange={handleChange} required
-                  placeholder="مثال: الدار البيضاء"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="text" name="city" value={form.city} onChange={handleChange} required placeholder="مثال: الدار البيضاء" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الحي / المنطقة</label>
-                <input type="text" name="district" value={form.district} onChange={handleChange}
-                  placeholder="مثال: المعاريف"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="text" name="district" value={form.district} onChange={handleChange} placeholder="مثال: المعاريف" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">العنوان التفصيلي</label>
-                <input type="text" name="address" value={form.address} onChange={handleChange}
-                  placeholder="العنوان الكامل..."
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="العنوان الكامل..." className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
             </div>
           </div>
 
           {/* ===== القسم 2: السعر والمساحة ===== */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
-              💰 السعر والمساحة
-            </h2>
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">💰 السعر والمساحة</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">السعر (درهم) *</label>
-                <input type="number" name="price" value={form.price} onChange={handleChange} required min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="price" value={form.price} onChange={handleChange} required min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الكراء/شهر (درهم)</label>
-                <input type="number" name="rent" value={form.rent} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="rent" value={form.rent} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الرهن (درهم)</label>
-                <input type="number" name="mortgage" value={form.mortgage} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="mortgage" value={form.mortgage} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المساحة (م²) *</label>
-                <input type="number" name="area" value={form.area} onChange={handleChange} required min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="area" value={form.area} onChange={handleChange} required min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">عدد الغرف *</label>
-                <input type="number" name="rooms" value={form.rooms} onChange={handleChange} required min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="rooms" value={form.rooms} onChange={handleChange} required min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الطابق</label>
-                <input type="number" name="floor" value={form.floor} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                <input type="number" name="floor" value={form.floor} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="negotiable" name="negotiable" checked={form.negotiable} onChange={handleChange}
-                className="w-5 h-5 rounded bg-slate-700 text-emerald-500 focus:ring-emerald-500" />
+              <input type="checkbox" id="negotiable" name="negotiable" checked={form.negotiable} onChange={handleChange} className="w-5 h-5 rounded bg-slate-700 text-emerald-500 focus:ring-emerald-500" />
               <label htmlFor="negotiable" className="text-gray-300">قابل للتفاوض</label>
             </div>
           </div>
 
           {/* ===== القسم 3: المواصفات الداخلية ===== */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
-              🏠 المواصفات الداخلية
-            </h2>
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">🏠 المواصفات الداخلية</h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">الصالونات</label>
-                <input type="number" name="salons" value={form.salons} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">الحمامات</label>
-                <input type="number" name="bathrooms" value={form.bathrooms} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">المطابخ</label>
-                <input type="number" name="kitchens" value={form.kitchens} onChange={handleChange} min="0" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">سنة البناء</label>
-                <input type="number" name="year" value={form.year} onChange={handleChange} min="1900" max="2030" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-300 mb-2">الصالونات</label><input type="number" name="salons" value={form.salons} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-gray-300 mb-2">الحمامات</label><input type="number" name="bathrooms" value={form.bathrooms} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-gray-300 mb-2">المطابخ</label><input type="number" name="kitchens" value={form.kitchens} onChange={handleChange} min="0" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
+              <div><label className="block text-sm font-medium text-gray-300 mb-2">سنة البناء</label><input type="number" name="year" value={form.year} onChange={handleChange} min="1900" max="2030" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" /></div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -325,8 +297,7 @@ function ClientFormContent() {
                 { key: "guard", label: "👮 حراسة" },
               ].map((item) => (
                 <label key={item.key} className="flex items-center gap-3 bg-slate-700/50 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition">
-                  <input type="checkbox" name={item.key} checked={(form as any)[item.key]} onChange={handleChange}
-                    className="w-5 h-5 rounded bg-slate-600 text-emerald-500 focus:ring-emerald-500" />
+                  <input type="checkbox" name={item.key} checked={(form as any)[item.key]} onChange={handleChange} className="w-5 h-5 rounded bg-slate-600 text-emerald-500 focus:ring-emerald-500" />
                   <span className="text-gray-300">{item.label}</span>
                 </label>
               ))}
@@ -335,8 +306,7 @@ function ClientFormContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">الواجهة</label>
-                <select name="facade" value={form.facade} onChange={handleChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <select name="facade" value={form.facade} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="">اختر الواجهة</option>
                   <option value="شمال">شمال</option>
                   <option value="جنوب">جنوب</option>
@@ -346,8 +316,7 @@ function ClientFormContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">المنظر</label>
-                <select name="view" value={form.view} onChange={handleChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <select name="view" value={form.view} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                   <option value="">اختر المنظر</option>
                   <option value="شارع">شارع</option>
                   <option value="حديقة">حديقة</option>
@@ -359,8 +328,7 @@ function ClientFormContent() {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">حالة العقار</label>
-              <select name="status" value={form.status} onChange={handleChange}
-                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+              <select name="status" value={form.status} onChange={handleChange} className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                 <option value="متوفر">متوفر</option>
                 <option value="محجوز">محجوز</option>
                 <option value="تم البيع">تم البيع</option>
@@ -369,41 +337,22 @@ function ClientFormContent() {
             </div>
           </div>
 
-          {/* ✅✅✅ ===== القسم 4: الصور (بالروابط) ===== */}
+          {/* ===== القسم 4: الصور (بالروابط) ===== */}
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2 flex items-center gap-2">
-              🖼️ صور العقار
-              <span className="text-xs font-normal text-gray-400">(روابط خارجية)</span>
+              🖼️ صور العقار <span className="text-xs font-normal text-gray-400">(روابط خارجية)</span>
             </h2>
 
-            {/* ✅ حقل إدخال الرابط + زر الإضافة */}
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  أدخل رابط الصورة
-                </label>
-                <input
-                  type="url"
-                  value={imageUrlInput}
-                  onChange={(e) => setImageUrlInput(e.target.value)}
-                  onKeyPress={handleImageKeyPress}
-                  placeholder="https://example.com/image.jpg"
-                  dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">أدخل رابط الصورة</label>
+                <input type="url" value={imageUrlInput} onChange={(e) => setImageUrlInput(e.target.value)} onKeyPress={handleImageKeyPress} placeholder="https://example.com/image.jpg" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
               <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={addImageUrl}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition hover:scale-105 whitespace-nowrap"
-                >
-                  ➕ إضافة صورة
-                </button>
+                <button type="button" onClick={addImageUrl} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition hover:scale-105 whitespace-nowrap">➕ إضافة صورة</button>
               </div>
             </div>
 
-            {/* نصائح */}
             <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 text-sm text-blue-200">
               <p className="font-medium mb-1">💡 كيفية إضافة صور:</p>
               <ul className="list-disc list-inside space-y-1 text-xs text-blue-300/80">
@@ -414,46 +363,18 @@ function ClientFormContent() {
               </ul>
             </div>
 
-            {/* ✅ معاينة الصور المضافة */}
             {previewImages.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-300">
-                    📷 الصور المضافة ({previewImages.length})
-                  </span>
+                  <span className="text-sm font-medium text-gray-300">📷 الصور المضافة ({previewImages.length})</span>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {previewImages.map((img, idx) => (
                     <div key={idx} className="relative group rounded-lg overflow-hidden bg-slate-700">
-                      <img 
-                        src={img} 
-                        alt={`صورة ${idx + 1}`} 
-                        className="w-full h-28 object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                        }}
-                      />
-                      
-                      {/* ترقيم الصورة */}
-                      <span className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                        {idx + 1}
-                      </span>
-                      
-                      {/* زر الحذف */}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold hover:bg-red-700"
-                        title="حذف هذه الصورة"
-                      >
-                        ✕
-                      </button>
-                      
-                      {/* عرض الرابط عند التمرير */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-[9px] text-gray-300 truncate" dir="ltr">{img}</p>
-                      </div>
+                      <img src={img} alt={`صورة ${idx + 1}`} className="w-full h-28 object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.jpg"; }} />
+                      <span className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">{idx + 1}</span>
+                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold hover:bg-red-700">✕</button>
                     </div>
                   ))}
                 </div>
@@ -469,34 +390,26 @@ function ClientFormContent() {
 
           {/* ===== القسم 5: الفيديو والوصف ===== */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">
-              🎬 الفيديو والوصف
-            </h2>
+            <h2 className="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-2">🎬 الفيديو والوصف</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">رابط الفيديو (YouTube أو غيره)</label>
-              <input type="url" name="video" value={form.video} onChange={handleChange}
-                placeholder="https://youtube.com/watch?..." dir="ltr"
-                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+              <input type="url" name="video" value={form.video} onChange={handleChange} placeholder="https://youtube.com/watch?..." dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">وصف العقار</label>
-              <textarea name="description" value={form.description} onChange={handleChange} rows={5}
-                placeholder="اكتب وصفاً تفصيلياً للعقار..."
-                className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none" />
+              <textarea name="description" value={form.description} onChange={handleChange} rows={5} placeholder="اكتب وصفاً تفصيلياً للعقار..." className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none" />
             </div>
 
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="featured" name="featured" checked={form.featured} onChange={handleChange}
-                className="w-5 h-5 rounded bg-slate-700 text-amber-500 focus:ring-amber-500" />
+              <input type="checkbox" id="featured" name="featured" checked={form.featured} onChange={handleChange} className="w-5 h-5 rounded bg-slate-700 text-amber-500 focus:ring-amber-500" />
               <label htmlFor="featured" className="text-gray-300">⭐ عرض كعقار مميز</label>
             </div>
           </div>
 
           {/* ===== القسم 6: معلومات صاحب العقار ===== */}
-          <div className="space-y-6 p-6 rounded-xl border-2 border-dashed"
-            style={{ background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(69, 26, 3, 0.3) 100%)', borderColor: '#f59e0b' }}>
+          <div className="space-y-6 p-6 rounded-xl border-2 border-dashed" style={{ background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(69, 26, 3, 0.3) 100%)', borderColor: '#f59e0b' }}>
             
             <div className="flex items-center gap-3">
               <span className="text-2xl">🔒</span>
@@ -509,44 +422,36 @@ function ClientFormContent() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">👤 اسم صاحب العقار</label>
-                <input type="text" name="ownerName" value={form.ownerName} onChange={handleChange}
-                  placeholder="مثال: محمد العلوي"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+                <input type="text" name="ownerName" value={form.ownerName} onChange={handleChange} placeholder="مثال: محمد العلوي" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">☎️ رقم الهاتف</label>
-                <input type="tel" name="ownerPhone" value={form.ownerPhone} onChange={handleChange}
-                  placeholder="0661234567" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+                <input type="tel" name="ownerPhone" value={form.ownerPhone} onChange={handleChange} placeholder="0661234567" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">💬 رقم الواتساب <span className="text-gray-500">(اختياري)</span></label>
-                <input type="tel" name="ownerWhatsapp" value={form.ownerWhatsapp} onChange={handleChange}
-                  placeholder="اتركه فارغاً = نفس الهاتف" dir="ltr"
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
+                <input type="tel" name="ownerWhatsapp" value={form.ownerWhatsapp} onChange={handleChange} placeholder="اتركه فارغاً = نفس الهاتف" dir="ltr" className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none" />
               </div>
             </div>
 
             <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-3 flex items-start gap-3">
               <span className="text-amber-400">ℹ️</span>
-              <p className="text-sm text-amber-200/80">
-                هذه المعلومات لن تظهر للزوار العاديين. ستظهر فقط للمدير في لوحة التحكم وصفحة تفاصيل العقار.
-              </p>
+              <p className="text-sm text-amber-200/80">هذه المعلومات لن تظهر للزوار العاديين. ستظهر فقط للمدير في لوحة التحكم وصفحة تفاصيل العقار.</p>
             </div>
           </div>
 
           {/* ===== أزرار الإجراءات ===== */}
           <div className="flex gap-4 pt-4 border-t border-slate-700">
-            <button type="submit"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02]">
-              {isEdit ? "💾 حفظ التعديلات" : "➕ إضافة العقار"}
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className={`flex-1 py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02] ${isSaving ? 'bg-gray-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+            >
+              {isSaving ? '⏳ جاري الحفظ...' : (isEdit ? '💾 حفظ التعديلات' : '➕ إضافة العقار')}
             </button>
-            <button type="button" onClick={() => router.back()}
-              className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition">
-              إلغاء
-            </button>
+            <button type="button" onClick={() => router.back()} className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition">إلغاء</button>
           </div>
         </form>
       </div>
