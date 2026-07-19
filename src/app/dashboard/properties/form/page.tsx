@@ -127,9 +127,13 @@ function PropertyFormContent() {
           : ["https://picsum.photos/seed/default/600/400.jpg"],
       video: form.video,
       description: form.description,
-     // استخدم new Date() لتحويل أي شيء إلى Date
-createdAt: existingProp ? new Date(existingProp.createdAt) : now,
-updatedAt: now,  // هذا صحيح إذا كان now من نوع Date
+     // حول السطر 130-132، اجعلها هكذا:
+
+createdAt: (existingProp?.createdAt 
+  ? new Date(existingProp.createdAt as string | Date) 
+  : new Date()) as Date,
+
+updatedAt: new Date() as Date,  // ← تأكد من إضافة as Date هنا أيضاً
     };
 
     if (id) {
