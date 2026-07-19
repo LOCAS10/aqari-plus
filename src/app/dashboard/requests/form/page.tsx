@@ -4,42 +4,94 @@ import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/contexts/AppContext";
 import type { Request } from "@/lib/types";
+// ✅✅✅ إضافة استيراد Firebase:
+import { addRequest as fbAddRequest, updateRequest as fbUpdateRequest } from "@/lib/firestore";
 
 function RequestFormContent() {
   const router = useRouter();
   const { state, dispatch } = useAppContext();
+  
+  // للتعديل - نتحقق من وجود ID في URL
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const editId = searchParams?.get("id");
+  const existingReq = editId ? state.requests.find((r) => r.id === editId) : null;
+  const isEdit = !!existingReq;
 
-  const [clientId, setClientId] = useState(state.clients[0]?.id || "");
+  const [clientId, setClientId] = useState(existingReq?.clientId || state.clients[0]?.id || "");
   const [form, setForm] = useState<Partial<Request>>({
-    operation: "شراء",
-    propertyType: "شقة",
-    city: "",
-    district: "",
-    rooms: 0,
-    area: 0,
-    budgetMin: 0,
-    budgetMax: 0,
-    mortgage: false,
-    notes: "",
-    status: "جديد",
+    operation: existingReq?.operation || "شراء",
+    propertyType: existingReq?.propertyType || "شقة",
+    city: existingReq?.city || "",
+    district: existingReq?.district || "",
+    rooms: existingReq?.rooms || 0,
+    area: existingReq?.area || 0,
+    budgetMin: existingReq?.budgetMin || 0,
+    budgetMax: existingReq?.budgetMax || 0,
+    mortgage: existingReq?.mortgage || false,
+    notes: existingReq?.notes || "",
+    status: existingReq?.status || "جديد",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSaving, setIsSaving] = useState(false); // ✅ حالة الحفظ
+
+  // ✅✅✅ handleSubmit معدّل - يحفظ في Firebase مباشرة!
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSaving) return;
+    
     const client = state.clients.find((c) => c.id === clientId);
-    if (!client) return;
+    if (!client) {
+      alert("الرجاء اختيار عميل");
+      return;
+    }
 
-    const request: Request = {
-      ...form,
-     id: Date.now().toString(),
-      clientId,
-      clientName: client.name,
-      createdAt: new Date(),
-    } as Request;
+    setIsSaving(true);
 
-    dispatch({ type: "ADD_REQUEST", payload: request });
-    dispatch({ type: "SHOW_TOAST", payload: { message: "تم إضافة الطلب بنجاح!", type: "success" } });
-    router.push("/dashboard/requests");
+    try {
+      const requestData: Request = {
+        id: existingReq?.id || Date.now().toString(),
+        clientId,
+        clientName: client.name,
+        operation: form.operation as Request["operation"],
+        propertyType: form.propertyType || "",
+        city: form.city || "",
+        district: form.district || "",
+        rooms: parseInt(String(form.rooms)) || 0,
+        area: parseInt(String(form.area)) || 0,
+        budgetMin: parseInt(String(form.budgetMin)) || 0,
+        budgetMax: parseInt(String(form.budgetMax)) || 0,
+        mortgage: form.mortgage || false,
+        notes: form.notes || "",
+        status: form.status || "جديد",
+        createdAt: existingReq ? existingReq.createdAt : new Date(),
+      };
+
+      console.log("🔄 جاري حفظ الطلب...");
+      console.log("📊 البيانات:", requestData);
+
+      if (isEdit && editId) {
+        // ✅ تحديث في Firebase
+        await fbUpdateRequest(editId, requestData);
+        console.log("✅ تم تحديث الطلب في Firebase!");
+        dispatch({ type: "UPDATE_REQUEST", payload: requestData });
+        dispatch({ type: "SHOW_TOAST", payload: { message: "✅ تم تحديث الطلب!", type: "success" } });
+      } else {
+        // ✅ إضافة جديدة في Firebase
+        const newId = await fbAddRequest(requestData);
+        console.log("✅ تمت إضافة الطلب في Firebase! ID:", newId);
+        
+        requestData.id = newId;
+        dispatch({ type: "ADD_REQUEST", payload: requestData });
+        dispatch({ type: "SHOW_TOAST", payload: { message: "✅ تم إضافة الطلب!", type: "success" } });
+      }
+
+      router.push("/dashboard/requests");
+    } catch (error) {
+      console.error("❌❌❌ خطأ في حفظ الطلب:", error);
+      dispatch({ type: "SHOW_TOAST", payload: { message: "❌ فشل الحفظ: " + error, type: "error" } });
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -48,10 +100,10 @@ function RequestFormContent() {
         {/* ===== Header ===== */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            📋 إضافة طلب جديد
+            {isEdit ? "✏️ تعديل طلب" : "📋 إضافة طلب جديد"}
           </h1>
           <p className="text-gray-400">
-            أدخل بيانات طلب العميل البحث عن عقار
+            {isEdit ? "تعديل بيانات الطلب" : "أدخل بيانات طلب العميل البحث عن عقار"}
           </p>
         </div>
 
@@ -93,7 +145,6 @@ function RequestFormContent() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* نوع العملية */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   نوع العملية <span className="text-red-400">*</span>
@@ -110,7 +161,6 @@ function RequestFormContent() {
                 </select>
               </div>
 
-              {/* نوع العقار */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   نوع العقار المطلوب <span className="text-red-400">*</span>
@@ -134,7 +184,6 @@ function RequestFormContent() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* المدينة */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   المدينة <span className="text-red-400">*</span>
@@ -149,7 +198,6 @@ function RequestFormContent() {
                 />
               </div>
 
-              {/* الحي / المنطقة */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   الحي أو المنطقة
@@ -173,74 +221,52 @@ function RequestFormContent() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {/* عدد الغرف */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  عدد الغرف
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">عدد الغرف</label>
                 <input
                   type="number"
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                   value={form.rooms}
                   onChange={(e) => setForm({ ...form, rooms: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                  dir="ltr"
+                  placeholder="0" min="0" dir="ltr"
                 />
                 <p className="text-xs text-gray-500 mt-1">اتركه 0 إذا غير مهم</p>
               </div>
 
-              {/* المساحة */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  المساحة (م²)
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">المساحة (م²)</label>
                 <input
                   type="number"
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                   value={form.area}
                   onChange={(e) => setForm({ ...form, area: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                  dir="ltr"
+                  placeholder="0" min="0" dir="ltr"
                 />
-                <p className="text-xs text-gray-500 mt-1">المساحة التقريبية بال متر مربع</p>
               </div>
 
-              {/* الميزانية الدنيا */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  الميزانية الدنيا (درهم)
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الميزانية الدنيا (درهم)</label>
                 <input
                   type="number"
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                   value={form.budgetMin}
                   onChange={(e) => setForm({ ...form, budgetMin: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                  dir="ltr"
+                  placeholder="0" min="0" dir="ltr"
                 />
               </div>
 
-              {/* الميزانية العليا */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  الميزانية القصوى (درهم)
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الميزانية القصوى (درهم)</label>
                 <input
                   type="number"
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                   value={form.budgetMax}
                   onChange={(e) => setForm({ ...form, budgetMax: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                  dir="ltr"
+                  placeholder="0" min="0" dir="ltr"
                 />
               </div>
             </div>
 
-            {/* خيار الرهن */}
             <div className="bg-slate-700/50 p-4 rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -264,21 +290,18 @@ function RequestFormContent() {
             </h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                ملاحظات أو متطلبات خاصة
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">ملاحظات أو متطلبات خاصة</label>
               <textarea
                 className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={4}
-                placeholder="أي متطلبات أخرى أو ملاحظات مهمة...&#10;مثال: يجب أن يكون قريب من المدرسة، أو لديه موقف سيارات..."
+                placeholder="أي متطلبات أخرى أو ملاحظات مهمة..."
               />
-              <p className="text-xs text-gray-500 mt-1">اكتب أي تفاصيل إضافية تساعد في البحث عن العقار المناسب</p>
             </div>
           </div>
 
-          {/* ===== حالة الطلب (للمدير فقط) ===== */}
+          {/* ===== حالة الطلب ===== */}
           {state.currentUser?.role === "مدير" && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-amber-400 border-b border-slate-700 pb-2 flex items-center gap-2">
@@ -286,9 +309,7 @@ function RequestFormContent() {
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  حالة الطلب
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">حالة الطلب</label>
                 <select
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
                   value={form.status}
@@ -307,9 +328,10 @@ function RequestFormContent() {
           <div className="flex gap-4 pt-6 border-t border-slate-700">
             <button
               type="submit"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02]"
+              disabled={isSaving}
+              className={`flex-1 py-4 rounded-xl font-bold text-lg transition hover:scale-[1.02] ${isSaving ? 'bg-gray-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
             >
-              ➕ إضافة الطلب
+              {isSaving ? '⏳ جاري الحفظ...' : (isEdit ? '💾 حفظ التعديلات' : '➕ إضافة الطلب')}
             </button>
             <button
               type="button"
