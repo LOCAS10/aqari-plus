@@ -4,7 +4,7 @@ import React, { createContext, useContext, useReducer, useRef, useEffect, ReactN
 import { Property, Client, Request, User } from "@/lib/types";
 import { sampleUsers } from "@/lib/data";
 
-// ✅✅✅ استيراد دوال Firebase:
+// ✅ استيراد دوال Firebase:
 import {
   getAllProperties,
   getAllClients,
@@ -32,7 +32,7 @@ interface AppState {
   currentUser: User | null;
   favorites: string[];
   toast: Toast | null;
-  loading: boolean; // ✅ إضافة حالة التحميل
+  loading: boolean;
 }
 
 interface Action {
@@ -47,7 +47,6 @@ interface AppContextType {
   getMatches: (property: Property) => string[];
 }
 
-// ✅ الحالة الأولية - فارغة (ستُحمّل من Firebase)
 const initialState: AppState = {
   properties: [],
   clients: [],
@@ -55,9 +54,10 @@ const initialState: AppState = {
   currentUser: null,
   favorites: [],
   toast: null,
-  loading: true, // ✅ يبدأ بالتحميل
+  loading: true,
 };
 
+// ✅✅✅ Reducer - مع كتابة تلقائية في Firebase!
 function reducer(state: AppState, action: Action): AppState {
   var s = Object.assign({}, state);
 
@@ -68,22 +68,31 @@ function reducer(state: AppState, action: Action): AppState {
     case "LOGOUT":
       s.currentUser = null;
       break;
+      
+    // ✅ العقارات - تكتب في Firebase
     case "ADD_PROPERTY":
       s.properties = [action.payload].concat(s.properties);
+      // ✅ كتابة في Firebase (async - لا ننتظر)
+      fbAddProperty(action.payload).catch(err => console.error("❌ Firebase add property:", err));
       break;
     case "UPDATE_PROPERTY":
       s.properties = s.properties.map(function (p) {
         if (p.id === action.payload.id) return action.payload;
         return p;
       });
+      // ✅ تحديث في Firebase
+      fbUpdateProperty(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update:", err));
       break;
     case "DELETE_PROPERTY":
-      s.properties = s.properties.filter(function (p) {
-        return p.id !== action.payload;
-      });
+      s.properties = s.properties.filter(function (p) { return p.id !== action.payload; });
+      // ✅ حذف من Firebase
+      fbDeleteProperty(action.payload).catch(err => console.error("❌ Firebase delete:", err));
       break;
+
+    // ✅ العملاء - تكتب في Firebase
     case "ADD_CLIENT":
       s.clients = s.clients.concat([action.payload]);
+      fbAddClient(action.payload).catch(err => console.error("❌ Firebase add client:", err));
       break;
     case "UPDATE_CLIENT":
       s.clients = s.clients.map(function (c) {
@@ -96,37 +105,37 @@ function reducer(state: AppState, action: Action): AppState {
         }
         return r;
       });
+      fbUpdateClient(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update client:", err));
       break;
     case "DELETE_CLIENT":
-      s.clients = s.clients.filter(function (c) {
-        return c.id !== action.payload;
-      });
-      s.requests = s.requests.filter(function (r) {
-        return r.clientId !== action.payload;
-      });
+      s.clients = s.clients.filter(function (c) { return c.id !== action.payload; });
+      s.requests = s.requests.filter(function (r) { return r.clientId !== action.payload; });
+      fbDeleteClient(action.payload).catch(err => console.error("❌ Firebase delete client:", err));
       break;
+
+    // ✅ الطلبات - تكتب في Firebase
     case "ADD_REQUEST":
       s.requests = s.requests.concat([action.payload]);
+      fbAddRequest(action.payload).catch(err => console.error("❌ Firebase add request:", err));
       break;
     case "UPDATE_REQUEST":
       s.requests = s.requests.map(function (r) {
         if (r.id === action.payload.id) return action.payload;
         return r;
       });
+      fbUpdateRequest(action.payload.id, action.payload).catch(err => console.error("❌ Firebase update request:", err));
       break;
     case "DELETE_REQUEST":
-      s.requests = s.requests.filter(function (r) {
-        return r.id !== action.payload;
-      });
+      s.requests = s.requests.filter(function (r) { return r.id !== action.payload; });
+      fbDeleteRequest(action.payload).catch(err => console.error("❌ Firebase delete request:", err));
       break;
+
     case "TOGGLE_FAV":
       var isFav = s.favorites.indexOf(action.payload);
       if (isFav === -1) {
         s.favorites = s.favorites.concat([action.payload]);
       } else {
-        s.favorites = s.favorites.filter(function (id) {
-          return id !== action.payload;
-        });
+        s.favorites = s.favorites.filter(function (id) { return id !== action.payload; });
       }
       break;
     case "SHOW_TOAST":
@@ -148,7 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const loaded = useRef(false);
 
-  // ✅✅✅ تحميل البيانات من Firebase عند البداية
+  // ✅ تحميل البيانات من Firebase عند البداية
   useEffect(function () {
     if (!loaded.current) {
       loadFromFirebase();
@@ -156,7 +165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ✅✅✅ دالة تحميل البيانات من Firebase
+  // ✅ دالة تحميل البيانات من Firebase
   async function loadFromFirebase() {
     try {
       console.log("🔄 جاري تحميل البيانات من Firebase...");
@@ -182,8 +191,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("❌ خطأ في تحميل البيانات:", error);
       dispatch({ type: "SET_LOADING", payload: false });
-      
-      // عرض رسالة خطأ للمستخدم
       dispatch({
         type: "SHOW_TOAST",
         payload: { message: "فشل في تحميل البيانات", type: "error" },
@@ -191,17 +198,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ✅✅✅ مراقبة التغييرات وحفظها في Firebase
+  // حفظ المفضلة في localStorage
   useEffect(function () {
-    if (!loaded.current || state.loading) return;
-
-    // حفظ المفضلة في localStorage (صغيرة وسريعة)
-    if (state.favorites) {
+    if (state.favorites && !state.loading) {
       localStorage.setItem("aqari_favorites", JSON.stringify(state.favorites));
     }
   }, [state.favorites, state.loading]);
 
-  // ✅ إدارة Toast
+  // إدارة Toast
   useEffect(function () {
     if (state && state.toast) {
       var t = setTimeout(function () {
@@ -248,68 +252,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return unique;
   };
 
-  // ✅✅✅ شاشة التحميل
+  // ✅ شاشة التحميل
   if (state.loading) {
     return (
       <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: '#0f172a',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        flexDirection: 'column',
-        gap: '20px'
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 9999, flexDirection: 'column', gap: '20px'
       }}>
-        {/* Animated icon */}
-        <div style={{
-          fontSize: '60px',
-          animation: 'bounce 1s infinite'
-        }}>🏠</div>
-        
-        {/* Loading text */}
+        <div style={{ fontSize: '60px', animation: 'bounce 1s infinite' }}>🏠</div>
         <h2 style={{ color: '#ffffff', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
           جاري تحميل البيانات...
         </h2>
-        
-        {/* Subtitle */}
-        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
-          من فضلك انتظر قليلاً
-        </p>
-
-        {/* Loading bar */}
+        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>من فضلك انتظر قليلاً</p>
         <div style={{
-          width: '200px',
-          height: '4px',
-          backgroundColor: '#1e293b',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          marginTop: '10px'
+          width: '200px', height: '4px', backgroundColor: '#1e293b',
+          borderRadius: '4px', overflow: 'hidden', marginTop: '10px'
         }}>
           <div style={{
-            width: '60%',
-            height: '100%',
-            backgroundColor: '#10b981',
-            borderRadius: '4px',
-            animation: 'loading 1.5s ease-in-out infinite'
+            width: '60%', height: '100%', backgroundColor: '#10b981',
+            borderRadius: '4px', animation: 'loading 1.5s ease-in-out infinite'
           }}></div>
         </div>
-
-        {/* CSS Animations */}
         <style>{`
-          @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-          }
-          @keyframes loading {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(150%); }
-            100% { transform: translateX(-100%); }
-          }
+          @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+          @keyframes loading { 0% { transform: translateX(-100%); } 50% { transform: translateX(150%); } 100% { transform: translateX(-100%); } }
         `}</style>
       </div>
     );
@@ -322,14 +290,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ✅ useAppContext hook
 export const useAppContext = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useAppContext must be used within AppProvider');
-  }
+  if (!context) throw new Error('useAppContext must be used within AppProvider');
   return context;
 };
 
-// ✅ useApp - اسم مستعار
 export const useApp = useAppContext;
