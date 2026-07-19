@@ -254,3 +254,5 @@ export const useAppContext = () => {
   }
   return context;
 };
+// ✅ useApp - اسم مستعار
+export const useApp = useAppContext;
