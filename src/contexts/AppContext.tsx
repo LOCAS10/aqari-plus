@@ -49,15 +49,18 @@ const STORAGE_KEY = "aqari_plus_data";
 
 function loadState(): AppState {
   if (typeof window === "undefined") return initialState;
+  
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return { ...initialState, ...parsed, currentUser: null, toast: null };
-    }
-  } catch {
-    return initialState;
+    if (!saved) return initialState;
+    
+    const parsed = JSON.parse(saved);
+    return { ...initialState, ...parsed };
+  } catch (error) {
+    console.error("Error loading state:", error);
   }
+  
+  return initialState; // ✅ ← أضف هذا السطر قبل قوس الإغلاق
 }
 
 function saveState(state: AppState) {
