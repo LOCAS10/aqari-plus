@@ -145,4 +145,55 @@ export default function PropertyCard({
           </div>
         )}
 
-        {/*
+        {/* ✅✅✅ للزوار والموظفين - زر الاستفسار */}
+        {!isAdmin && property.ownerName && (
+          <div className="mb-4">
+            <button
+              onClick={() => alert('شكراً على اهتمامك! سيتم التواصل معك قريباً.')}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-lg font-medium text-sm transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
+            >
+              📩 أرغب في الاستفسار عن هذا العقار
+            </button>
+            <p className="text-center text-xs text-gray-500 mt-1.5">
+              سيتم الرد عليك في أقرب وقت
+            </p>
+          </div>
+        )}
+
+        {/* ===== أزرار الإجراءات ===== */}
+        <div className="flex gap-2">
+          <Link
+            href={`/properties/${property.id}`}
+            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-center py-2 rounded-lg transition"
+          >
+            التفاصيل
+          </Link>
+          {actions && (
+            <>
+              <Link
+                href={`/dashboard/properties/form?id=${property.id}`}
+                className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition"
+              >
+                تعديل
+              </Link>
+              <button
+                onClick={() => {
+                  if (confirm('هل أنت متأكد من حذف هذا العقار؟')) {
+                    dispatch({ type: "DELETE_PROPERTY", payload: property.id });
+                    dispatch({ 
+                      type: "SHOW_TOAST", 
+                      payload: { message: "تم حذف العقار", type: "success" } 
+                    });
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition"
+              >
+                حذف
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
