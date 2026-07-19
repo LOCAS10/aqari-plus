@@ -43,6 +43,7 @@ function PropertyFormContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date().toISOString().split("T")[0];
+       const num = (v: string) => { const n = parseInt(v); return isNaN(n) ? 0 : n; };
     const prop: Property = {
       id: id || ("P" + String(state.propCounter).padStart(3, "0")),
       operation: (form.operation || "بيع") as Property["operation"],
@@ -51,21 +52,21 @@ function PropertyFormContent() {
       city: form.city || "",
       district: form.district || "",
       address: form.address || "",
-      price: Number(form.price) || 0,
-      area: Number(form.area) || 0,
-      rooms: Number(form.rooms) || 0,
-      salons: Number(form.salons) || 0,
-      bathrooms: Number(form.bathrooms) || 0,
-      kitchens: Number(form.kitchens) || 0,
+      price: num(form.price || "0"),
+      area: num(form.area || "0"),
+      rooms: num(form.rooms || "0"),
+      salons: num(form.salons || "0"),
+      bathrooms: num(form.bathrooms || "0"),
+      kitchens: num(form.kitchens || "0"),
       floor: form.floor || "",
-      year: Number(form.year) || 0,
+      year: num(form.year || "0"),
       facade: form.facade || "",
       view: form.view || "",
       garage: !!form.garage, elevator: !!form.elevator, balcony: !!form.balcony,
       garden: !!form.garden, pool: !!form.pool, guard: !!form.guard,
       negotiable: !!form.negotiable, featured: !!form.featured,
-      rent: Number(form.rent) || 0, mortgage: Number(form.mortgage) || 0,
-      images: imageUrls.length > 0 ? imageUrls : ["https://picsum.photos/seed/default/600/400.jpg"],
+      rent: num(form.rent || "0"), mortgage: num(form.mortgage || "0"),
+      images: imageUrls.filter(i => i && i.startsWith("http")),
       video: form.video || "",
       description: form.description || "",
       createdAt: existingProp?.createdAt || now,
