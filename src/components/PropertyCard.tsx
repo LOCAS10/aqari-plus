@@ -33,13 +33,32 @@ export default function PropertyCard({
   const { state, dispatch } = useAppContext();
   const isFav = state.favorites.includes(property.id);
 
+  // ✅✅✅ التحقق من صلاحيات المستخدم:
+  const isAdmin = state.currentUser?.role === "مدير";
+
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch({ type: "TOGGLE_FAV", payload: property.id });
   };
 
+  // ✅ دالة لفتح واتساب
+  const openWhatsapp = () => {
+    const number = property.ownerWhatsapp || property.ownerPhone;
+    if (number) {
+      window.open(`https://wa.me/212${number.replace(/^0/, '')}`, '_blank');
+    }
+  };
+
+  // ✅ دالة لفتح الهاتف
+  const callPhone = () => {
+    if (property.ownerPhone) {
+      window.open(`tel:${property.ownerPhone}`, '_self');
+    }
+  };
+
   return (
     <div className="bg-slate-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+      {/* ===== صورة العقار ===== */}
       <div className="relative">
         <img
           src={property.images[0]}
@@ -66,11 +85,13 @@ export default function PropertyCard({
           #{property.id}
         </div>
       </div>
+
+      {/* ===== معلومات العقار ===== */}
       <div className="p-4 text-white">
         <div className="text-lg font-bold mb-2">
           {property.propertyType} في {property.city} - {property.district}
         </div>
-        <div className="text-sm text-gray-400 mb-3 flex gap-3">
+        <div className="text-sm text-gray-400 mb-3 flex gap-3 flex-wrap">
           <span>📐 {property.area} م²</span>
           <span>🛏️ {property.rooms}</span>
           {property.bathrooms > 0 && <span>🚿 {property.bathrooms}</span>}
@@ -78,6 +99,68 @@ export default function PropertyCard({
         <div className="text-xl font-bold text-amber-500 mb-4">
           {displayPrice(property)}
         </div>
+
+        {/* ✅✅✅ قسم صاحب العقار - يظهر للمدير فقط! */}
+        {isAdmin && property.ownerName && (
+          <div 
+            className="mb-4 p-3 rounded-lg border-2 border-dashed border-amber-400"
+            style={{
+              background: 'linear-gradient(135deg, #451a03 0%, #78350f 100%)',
+            }}
+          >
+            {/* شارة "معلومات خاصة" */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold bg-red-600 text-white px-2 py-1 rounded-full">
+                🔒 خاص - مدير فقط
+              </span>
+            </div>
+
+            {/* اسم المالك */}
+            <p className="text-amber-200 font-semibold mb-2 text-sm">
+              👤 {property.ownerName}
+            </p>
+            
+            {/* أزرار الاتصال */}
+            <div className="flex gap-2 flex-wrap">
+              {/* زر الهاتف */}
+              {property.ownerPhone && (
+                <button
+                  onClick={callPhone}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium transition-colors duration-200 hover:scale-105"
+                >
+                  ☎️ <span dir="ltr">{property.ownerPhone}</span>
+                </button>
+              )}
+              
+              {/* زر الواتساب */}
+              {(property.ownerWhatsapp || property.ownerPhone) && (
+                <button
+                  onClick={openWhatsapp}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium transition-colors duration-200 hover:scale-105"
+                >
+                  💬 واتساب
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ✅✅✅ للزوار والموظفين - زر الاستفسار */}
+        {!isAdmin && property.ownerName && (
+          <div className="mb-4">
+            <button
+              onClick={() => alert('شكراً على اهتمامك! سيتم التواصل معك قريباً.')}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-lg font-medium text-sm transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
+            >
+              📩 أرغب في الاستفسار عن هذا العقار
+            </button>
+            <p className="text-center text-xs text-gray-500 mt-1.5">
+              سيتم الرد عليك في أقرب وقت
+            </p>
+          </div>
+        )}
+
+        {/* ===== أزرار الإجراءات ===== */}
         <div className="flex gap-2">
           <Link
             href={`/properties/${property.id}`}
@@ -95,8 +178,13 @@ export default function PropertyCard({
               </Link>
               <button
                 onClick={() => {
-                  dispatch({ type: "DELETE_PROPERTY", payload: property.id });
-                  dispatch({ type: "SHOW_TOAST", payload: { message: "تم حذف العقار", type: "success" } });
+                  if (confirm('هل أنت متأكد من حذف هذا العقار؟')) {
+                    dispatch({ type: "DELETE_PROPERTY", payload: property.id });
+                    dispatch({ 
+                      type: "SHOW_TOAST", 
+                      payload: { message: "تم حذف العقار", type: "success" } 
+                    });
+                  }
                 }}
                 className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition"
               >

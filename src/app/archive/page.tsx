@@ -1,10 +1,10 @@
 "use client";
 
-import { useAppContext } from "@/contexts/AppContext";
+import { useApp } from "@/contexts/AppContext";
 import PropertyCard from "@/components/PropertyCard";
 
 export default function ArchivePage() {
-  const { state } = useAppContext();
+  const { state } = useApp();
   const archived = state.properties.filter(
     (p) => p.status === "تم البيع" || p.status === "تم الكراء"
   );

@@ -1,8 +1,44 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
-import { AppState, Action, Property, User } from "@/lib/types";
-import { sampleProperties, sampleClients, sampleRequests, sampleUsers, initialCounters } from "@/lib/data";
+import React, { createContext, useContext, useReducer, useRef, useEffect, ReactNode } from "react";
+import { Property, Client, Request, User } from "@/lib/types";
+import { sampleUsers } from "@/lib/data";
+
+// ✅✅✅ استيراد دوال Firebase:
+import {
+  getAllProperties,
+  getAllClients,
+  getAllRequests,
+  addProperty as fbAddProperty,
+  updateProperty as fbUpdateProperty,
+  deleteProperty as fbDeleteProperty,
+  addClient as fbAddClient,
+  updateClient as fbUpdateClient,
+  deleteClient as fbDeleteClient,
+  addRequest as fbAddRequest,
+  updateRequest as fbUpdateRequest,
+  deleteRequest as fbDeleteRequest,
+} from "@/lib/firestore";
+
+interface Toast {
+  message: string;
+  type: "success" | "error" | "info" | "warning";
+}
+
+interface AppState {
+  properties: Property[];
+  clients: Client[];
+  requests: Request[];
+  currentUser: User | null;
+  favorites: string[];
+  toast: Toast | null;
+  loading: boolean; // ✅ إضافة حالة التحميل
+}
+
+interface Action {
+  type: string;
+  payload?: any;
+}
 
 interface AppContextType {
   state: AppState;
@@ -11,87 +47,172 @@ interface AppContextType {
   getMatches: (property: Property) => string[];
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
+// ✅ الحالة الأولية - فارغة (ستُحمّل من Firebase)
 const initialState: AppState = {
-  properties: sampleProperties,
-  clients: sampleClients,
-  requests: sampleRequests,
+  properties: [],
+  clients: [],
+  requests: [],
   currentUser: null,
   favorites: [],
   toast: null,
-  propCounter: initialCounters.propertyCounter,
-  reqCounter: initialCounters.requestCounter,
-  cliCounter: initialCounters.clientCounter,
+  loading: true, // ✅ يبدأ بالتحميل
 };
 
-const reducer = (state: AppState, action: Action): AppState => {
+function reducer(state: AppState, action: Action): AppState {
+  var s = Object.assign({}, state);
+
   switch (action.type) {
     case "LOGIN":
-      return { ...state, currentUser: action.payload };
+      s.currentUser = action.payload;
+      break;
     case "LOGOUT":
-      return { ...state, currentUser: null };
+      s.currentUser = null;
+      break;
     case "ADD_PROPERTY":
-      return { ...state, properties: [...state.properties, action.payload], propCounter: state.propCounter + 1 };
+      s.properties = [action.payload].concat(s.properties);
+      break;
     case "UPDATE_PROPERTY":
-      return {
-        ...state,
-        properties: state.properties.map((p) => (p.id === action.payload.id ? action.payload : p)),
-      };
+      s.properties = s.properties.map(function (p) {
+        if (p.id === action.payload.id) return action.payload;
+        return p;
+      });
+      break;
     case "DELETE_PROPERTY":
-      return { ...state, properties: state.properties.filter((p) => p.id !== action.payload) };
+      s.properties = s.properties.filter(function (p) {
+        return p.id !== action.payload;
+      });
+      break;
     case "ADD_CLIENT":
-      return { ...state, clients: [...state.clients, action.payload], cliCounter: state.cliCounter + 1 };
+      s.clients = s.clients.concat([action.payload]);
+      break;
     case "UPDATE_CLIENT":
-      return {
-        ...state,
-        clients: state.clients.map((c) => (c.id === action.payload.id ? action.payload : c)),
-      };
+      s.clients = s.clients.map(function (c) {
+        if (c.id === action.payload.id) return action.payload;
+        return c;
+      });
+      s.requests = s.requests.map(function (r) {
+        if (r.clientId === action.payload.id) {
+          return Object.assign({}, r, { clientName: action.payload.name });
+        }
+        return r;
+      });
+      break;
     case "DELETE_CLIENT":
-      return { ...state, clients: state.clients.filter((c) => c.id !== action.payload) };
+      s.clients = s.clients.filter(function (c) {
+        return c.id !== action.payload;
+      });
+      s.requests = s.requests.filter(function (r) {
+        return r.clientId !== action.payload;
+      });
+      break;
     case "ADD_REQUEST":
-      return { ...state, requests: [...state.requests, action.payload], reqCounter: state.reqCounter + 1 };
+      s.requests = s.requests.concat([action.payload]);
+      break;
     case "UPDATE_REQUEST":
-      return {
-        ...state,
-        requests: state.requests.map((r) => (r.id === action.payload.id ? action.payload : r)),
-      };
+      s.requests = s.requests.map(function (r) {
+        if (r.id === action.payload.id) return action.payload;
+        return r;
+      });
+      break;
     case "DELETE_REQUEST":
-      return { ...state, requests: state.requests.filter((r) => r.id !== action.payload) };
+      s.requests = s.requests.filter(function (r) {
+        return r.id !== action.payload;
+      });
+      break;
     case "TOGGLE_FAV":
-      const isFav = state.favorites.includes(action.payload);
-      const newFavs = isFav
-        ? state.favorites.filter((id) => id !== action.payload)
-        : [...state.favorites, action.payload];
-      localStorage.setItem("favorites", JSON.stringify(newFavs));
-      return { ...state, favorites: newFavs };
+      var isFav = s.favorites.indexOf(action.payload);
+      if (isFav === -1) {
+        s.favorites = s.favorites.concat([action.payload]);
+      } else {
+        s.favorites = s.favorites.filter(function (id) {
+          return id !== action.payload;
+        });
+      }
+      break;
     case "SHOW_TOAST":
-      return { ...state, toast: action.payload };
-    default:
-      return state;
+      s.toast = action.payload;
+      break;
+    case "LOAD_STATE":
+      s = { ...s, ...action.payload, loading: false };
+      break;
+    case "SET_LOADING":
+      s.loading = action.payload;
+      break;
   }
-};
+  return s;
+}
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const loaded = useRef(false);
 
-  useEffect(() => {
-    const savedFavs = localStorage.getItem("favorites");
-    if (savedFavs) {
-      const favs = JSON.parse(savedFavs);
-      favs.forEach((id: string) => dispatch({ type: "TOGGLE_FAV", payload: id }));
+  // ✅✅✅ تحميل البيانات من Firebase عند البداية
+  useEffect(function () {
+    if (!loaded.current) {
+      loadFromFirebase();
+      loaded.current = true;
     }
   }, []);
 
-  useEffect(() => {
-    if (state.toast) {
-      const timer = setTimeout(() => dispatch({ type: "SHOW_TOAST", payload: { message: '', type: 'info' }}), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [state.toast]);
+  // ✅✅✅ دالة تحميل البيانات من Firebase
+  async function loadFromFirebase() {
+    try {
+      console.log("🔄 جاري تحميل البيانات من Firebase...");
 
-  const login = (email: string, password: string): User | null => {
-    let user: User | null = null;
+      const [properties, clients, requests] = await Promise.all([
+        getAllProperties(),
+        getAllClients(),
+        getAllRequests(),
+      ]);
+
+      dispatch({
+        type: "LOAD_STATE",
+        payload: {
+          properties,
+          clients,
+          requests,
+          favorites: JSON.parse(localStorage.getItem("aqari_favorites") || "[]"),
+        },
+      });
+
+      console.log("✅ تم تحميل البيانات بنجاح!");
+      console.log(`📊 العقارات: ${properties.length} | العملاء: ${clients.length} | الطلبات: ${requests.length}`);
+    } catch (error) {
+      console.error("❌ خطأ في تحميل البيانات:", error);
+      dispatch({ type: "SET_LOADING", payload: false });
+      
+      // عرض رسالة خطأ للمستخدم
+      dispatch({
+        type: "SHOW_TOAST",
+        payload: { message: "فشل في تحميل البيانات", type: "error" },
+      });
+    }
+  }
+
+  // ✅✅✅ مراقبة التغييرات وحفظها في Firebase
+  useEffect(function () {
+    if (!loaded.current || state.loading) return;
+
+    // حفظ المفضلة في localStorage (صغيرة وسريعة)
+    if (state.favorites) {
+      localStorage.setItem("aqari_favorites", JSON.stringify(state.favorites));
+    }
+  }, [state.favorites, state.loading]);
+
+  // ✅ إدارة Toast
+  useEffect(function () {
+    if (state && state.toast) {
+      var t = setTimeout(function () {
+        dispatch({ type: "SHOW_TOAST", payload: null });
+      }, 3000);
+      return function () { clearTimeout(t); };
+    }
+  }, [state?.toast]);
+
+  var login = function (email: string, password: string): User | null {
+    var user: User | null = null;
     if (email === "admin@aqari.ma" && password === "admin123") {
       user = sampleUsers[0];
     } else if (email === "user@aqari.ma" && password === "user123") {
@@ -103,40 +224,112 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return user;
   };
 
-  const getMatches = (property: Property): string[] => {
-    const matches: string[] = [];
-    state.requests.forEach((req) => {
-      const opMatch =
-        (property.operation === "بيع" && req.operation === "شراء") ||
-        (property.operation === req.operation);
-      const typeMatch = req.propertyType.includes(property.propertyType) || property.propertyType.includes(req.propertyType);
-      const cityMatch = property.city === req.city;
-      const priceMatch =
-        property.operation === "بيع"
-          ? property.price >= req.budgetMin && property.price <= req.budgetMax
-          : property.operation === "كراء"
-          ? property.rent >= req.budgetMin && property.rent <= req.budgetMax
-          : property.mortgage >= req.budgetMin && property.mortgage <= req.budgetMax;
-      const roomsMatch = req.rooms <= property.rooms;
-
-      if (opMatch && typeMatch && cityMatch && (priceMatch || true) && (roomsMatch || true)) {
+  var getMatches = function (property: Property): string[] {
+    if (!state) return [];
+    var matches: string[] = [];
+    state.requests.forEach(function (req) {
+      var opMatch = (property.operation === "بيع" && req.operation === "شراء") || property.operation === req.operation;
+      var typeMatch = req.propertyType.indexOf(property.propertyType) !== -1 || property.propertyType.indexOf(req.propertyType) !== -1;
+      var cityMatch = !req.city || property.city === req.city || property.district.indexOf(req.city) !== -1;
+      var priceMatch = property.operation === "بيع"
+        ? !req.budgetMax || (property.price >= req.budgetMin && property.price <= req.budgetMax)
+        : property.operation === "كراء"
+          ? !req.budgetMax || (property.rent >= req.budgetMin && property.rent <= req.budgetMax)
+          : !req.mortgage || property.mortgage >= req.budgetMin;
+      var roomsMatch = !req.rooms || req.rooms <= property.rooms;
+      if (opMatch && typeMatch && cityMatch && priceMatch && roomsMatch) {
         matches.push(req.clientName);
       }
     });
-    return [...new Set(matches)];
+    var unique: string[] = [];
+    matches.forEach(function (m) {
+      if (unique.indexOf(m) === -1) unique.push(m);
+    });
+    return unique;
   };
+
+  // ✅✅✅ شاشة التحميل
+  if (state.loading) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#0f172a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        {/* Animated icon */}
+        <div style={{
+          fontSize: '60px',
+          animation: 'bounce 1s infinite'
+        }}>🏠</div>
+        
+        {/* Loading text */}
+        <h2 style={{ color: '#ffffff', fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+          جاري تحميل البيانات...
+        </h2>
+        
+        {/* Subtitle */}
+        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
+          من فضلك انتظر قليلاً
+        </p>
+
+        {/* Loading bar */}
+        <div style={{
+          width: '200px',
+          height: '4px',
+          backgroundColor: '#1e293b',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          marginTop: '10px'
+        }}>
+          <div style={{
+            width: '60%',
+            height: '100%',
+            backgroundColor: '#10b981',
+            borderRadius: '4px',
+            animation: 'loading 1.5s ease-in-out infinite'
+          }}></div>
+        </div>
+
+        {/* CSS Animations */}
+        <style>{`
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+          }
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(150%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <AppContext.Provider value={{ state, dispatch, login, getMatches }}>
       {children}
     </AppContext.Provider>
   );
-};
+}
 
+// ✅ useAppContext hook
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error("useAppContext must be used within an AppProvider");
+    throw new Error('useAppContext must be used within AppProvider');
   }
   return context;
 };
+
+// ✅ useApp - اسم مستعار
+export const useApp = useAppContext;

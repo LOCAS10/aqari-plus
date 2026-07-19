@@ -1,3 +1,6 @@
+// ============================================
+// 📁 src/lib/types.ts (محتوى كامل محدّث)
+// ============================================
 
 export interface Property {
   id: string;
@@ -32,6 +35,11 @@ export interface Property {
   featured: boolean;
   createdAt: Date;
   updatedAt: Date;
+
+  // ✅✅✅ الحقول الجديدة - معلومات صاحب العقار:
+  ownerName?: string;        // اسم صاحب العقار (اختياري)
+  ownerPhone?: string;       // رقم هاتف صاحب العقار (اختياري)
+  ownerWhatsapp?: string;    // رقم واتساب صاحب العقار (اختياري)
 }
 
 export interface Client {
@@ -66,7 +74,7 @@ export interface User {
   uid: string;
   name: string;
   email: string;
-  role: "مدير" | "موظف";
+  role: "مدير" | "موظف";  // ✅ تم البقاء على العربية كما في مشروعك
 }
 
 export interface AppState {
