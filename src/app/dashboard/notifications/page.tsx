@@ -38,14 +38,14 @@ export default function NotificationsPage() {
       {loading ? (
         <div className="text-center py-12">
           <div className="text-4xl mb-4 animate-bounce">📭</div>
-          <p className="text-gray-400">جاري تحميل الإشعار...</p>
+          <p className="text-gray-400">جاري تحميل الإشعارات...</p>
         </div>
       ) : notifications.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📭</div>
           <p className="text-xl text-gray-400 mb-2">لا توجد إشعارات بعد</p>
           <p className="text-sm text-gray-500 mt-2">
-            ستظهر هنا الإشعار عندما يرسل زائر استفسار عن عقار
+            ستظهر هنا الإشعارات عندما يرسل زائر استفسار عن عقار
           </p>
           <Link 
             href="/properties"
@@ -69,10 +69,12 @@ export default function NotificationsPage() {
               {/* Header */}
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-2">
+                  {/* ✅✅✅ تم الإصلاح هنا - استخدام inquiryType بدلاً من type */}
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    notif.type === 'inquiry' ? 'bg-blue-500 text-white' :
-                    notif.type === 'شراء' ? 'bg-emerald-500 text-white' :
-                    'bg-purple-500 text-white'
+                    notif.inquiryType === 'زيارة' ? 'bg-blue-500 text-white' :
+                    notif.inquiryType === 'شراء' ? 'bg-emerald-500 text-white' :
+                    notif.inquiryType === 'كراء' ? 'bg-purple-500 text-white' :
+                    'bg-gray-500 text-white'
                   }`}>
                     {notif.inquiryType === 'زيارة' ? '📞' : 
                        notif.inquiryType === 'شراء' ? '🛒' : '🔑'}
