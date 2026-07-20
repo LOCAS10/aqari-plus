@@ -3,9 +3,33 @@
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import RequestCard from "@/components/RequestCard";
+import { deleteRequest } from "@/lib/firestore"; // ✅✅✅ أضف هذا السطر
 
 export default function DashboardRequestsPage() {
   const { state, dispatch } = useAppContext();
+
+  // ✅✅✅ دالة الحذف الصحيحة
+  const handleDelete = async (id: string) => {
+    try {
+      // 1. حذف من Firestore أولاً
+      await deleteRequest(id);
+      
+      // 2. ثم حذف من الواجهة (State)
+      dispatch({ type: "DELETE_REQUEST", payload: id });
+      
+      // 3. رسالة نجاح
+      dispatch({ 
+        type: "SHOW_TOAST", 
+        payload: { message: "✅ تم حذف الطلب بنجاح!", type: "success" } 
+      });
+    } catch (error) {
+      console.error("❌ خطأ في الحذف:", error);
+      dispatch({ 
+        type: "SHOW_TOAST", 
+        payload: { message: "❌ فشل حذف الطلب!", type: "error" } 
+      });
+    }
+  };
 
   return (
     <div>
@@ -24,13 +48,10 @@ export default function DashboardRequestsPage() {
           <div key={r.id} className="relative">
             <RequestCard request={r} />
             <button
-              onClick={() => {
-                dispatch({ type: "DELETE_REQUEST", payload: r.id });
-                dispatch({ type: "SHOW_TOAST", payload: { message: "تم حذف الطلب!", type: "success" } });
-              }}
+              onClick={() => handleDelete(r.id)} // ✅✅✅ استدعاء الدالة الجديدة
               className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
             >
-              حذف
+              🗑️ حذف
             </button>
           </div>
         ))}
