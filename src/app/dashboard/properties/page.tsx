@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import PropertyCard from "@/components/PropertyCard";
 import { db } from "@/lib/firebase";
-import { doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 
 export default function DashboardPropertiesPage() {
   const { state, dispatch } = useAppContext();
