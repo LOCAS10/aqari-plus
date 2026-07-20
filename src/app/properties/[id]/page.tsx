@@ -68,7 +68,11 @@ export default function PropertyDetailPage() {
     }
   };
 
+<<<<<<< HEAD
   // ✅✅✅ دالة إرسال الاستفسار - محسنة
+=======
+  // ✅✅✅ دالة إرسال الاستفسار - محسنة ومكتملة
+>>>>>>> 6dfad78155d65565bde2451a749bd8af11466595
   const handleSubmitInquiry = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     
@@ -79,7 +83,11 @@ export default function PropertyDetailPage() {
     }
     
     try {
+<<<<<<< HEAD
       // ✅ بيانات الاستفسار الكاملة
+=======
+      // ✅ بيانات الاستفسار الكاملة - مع جميع الحقول المطلوبة
+>>>>>>> 6dfad78155d65565bde2451a749bd8af11466595
       const inquiryData = {
         id: Date.now().toString(),
         name: inquiryForm.name.trim(),
@@ -99,6 +107,14 @@ export default function PropertyDetailPage() {
         clientId: 'guest-' + inquiryForm.phone,
         clientName: inquiryForm.name,
         clientPhone: inquiryForm.phone,
+<<<<<<< HEAD
+=======
+        // ✅✅✅ الحقول الإضافية المطلوبة من TypeScript
+        rooms: property.rooms || 0,
+        mortgage: false,
+        budgetMin: property.price || 0,
+        budgetMax: property.price || 0,
+>>>>>>> 6dfad78155d65565bde2451a749bd8af11466595
       };
       
       console.log("🔄 جاري حفظ الاستفسار...");
