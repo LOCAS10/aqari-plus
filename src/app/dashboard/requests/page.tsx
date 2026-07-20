@@ -3,27 +3,49 @@
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import RequestCard from "@/components/RequestCard";
-import { deleteRequest } from "@/lib/firestore";
 
 export default function DashboardRequestsPage() {
   const { state, dispatch } = useAppContext();
 
+  // ✅✅✅ حذف باستخدام Fetch API مباشرة
   const handleDelete = async (id: string) => {
     if (!id || !confirm(`حذف الطلب (${id})؟`)) return;
 
     try {
       console.log("🗑️ جاري الحذف...", id);
-      await deleteRequest(id);
-      console.log("✅ تم الحذف!");
       
+      // استخدام Fetch API مباشرة لـ Firestore REST API
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/aqari-plus-db/databases/(default)/documents/requests/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("📊 حالة الاستجابة:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ تفاصيل الخطأ:", errorData);
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      console.log("✅ تم الحذف بنجاح!");
+      
+      // حذف من الواجهة
       dispatch({ type: "DELETE_REQUEST", payload: id });
+      
       dispatch({ 
         type: "SHOW_TOAST", 
         payload: { message: "🗑️ تم الحذف!", type: "success" } 
       });
+
     } catch (error: any) {
-      console.error("❌ خطأ:", error);
-      alert("فشل الحذف: " + error?.message);
+      console.error("❌❌❌ فشل الحذف:", error);
+      alert(`فشل الحذف!\n\n${error.message}\n\nافتح Console (F12) للمزيد`);
     }
   };
 
@@ -31,10 +53,7 @@ export default function DashboardRequestsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">📋 إدارة الطلبات</h1>
-        <Link 
-          href="/dashboard/requests/form" 
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition"
-        >
+        <Link href="/dashboard/requests/form" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
           ➕ إضافة طلب
         </Link>
       </div>
