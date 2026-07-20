@@ -1,4 +1,4 @@
-cat > src/app/dashboard/requests/page.tsx << 'ENDOFFILE'
+
 "use client";
 
 import Link from "next/link";
