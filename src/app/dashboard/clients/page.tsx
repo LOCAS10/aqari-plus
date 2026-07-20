@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 
 export default function DashboardClientsPage() {
   const { state, dispatch } = useAppContext();
