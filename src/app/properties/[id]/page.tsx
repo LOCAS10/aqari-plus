@@ -2,16 +2,31 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAppContext } from "@/contexts/AppContext";
 import { displayPrice } from "@/components/PropertyCard";
+// ✅✅✅ استيراد دوال الإشعارات
+import { addNotification } from "@/lib/notifications";
+// ✅✅✅ استيراد دوال Firestore (لحفظظ الاستفسار)
+import { addRequest as fbAddRequest } from "@/lib/firestore";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const { state, dispatch } = useAppContext();
   const [selectedImage, setSelectedImage] = useState(0);
   const property = state.properties.find(p => p.id === id);
-
-  // ✅✅✅ التحقق من صلاحيات المستخدم:
+  const router = useRouter();
+  
+  // ✅✅✅ حالة الحفظظ
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [inquiryType, setInquiryType] = useState<'زيارة' | 'شراء' | 'كراء'>('شراء');
+  const [inquiryForm, setInquiryForm] = useState({
+    name: '',
+    phone: '',
+    notes: '',
+  });
+  
+  // ✅✅✅ التحقق من صلاحيات المستخدم
   const isAdmin = state.currentUser?.role === "مدير";
 
   if (!property) {
@@ -25,7 +40,7 @@ export default function PropertyDetailPage() {
 
   const isFav = state.favorites.includes(property.id);
 
-  // ✅ دوال الاتصال
+  // ✅✅✅ دوال الاتصال
   const openOwnerWhatsapp = () => {
     const number = property.ownerWhatsapp || property.ownerPhone;
     if (number) {
@@ -39,6 +54,9 @@ export default function PropertyDetailPage() {
     }
   };
 
+  // ✅✅✅ دالة فتحقق من تسجيل الدخول
+  const isLoggedIn = !!state.currentUser;
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4">
       <div className="grid lg:grid-cols-2 gap-10">
@@ -50,7 +68,6 @@ export default function PropertyDetailPage() {
               alt={property.propertyType}
               className="w-full h-[400px] object-cover"
             />
-            {/* زر المفضلة */}
             <button
               onClick={() => dispatch({ type: "TOGGLE_FAV", payload: property.id })}
               className="absolute top-4 right-4 bg-white/90 p-3 rounded-full hover:scale-110 transition shadow-lg"
@@ -121,33 +138,33 @@ export default function PropertyDetailPage() {
               <div className="text-gray-400 text-sm mb-1">📐 المساحة</div>
               <div className="text-xl font-bold">{property.area} م²</div>
             </div>
-            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
-              <div className="text-gray-400 text-sm mb-1">🛏️ الغرف</div>
+            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <div className="text-gray-400 text-sm mb-1">🛏 الغرف</div>
               <div className="text-xl font-bold">{property.rooms}</div>
             </div>
-            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
               <div className="text-gray-400 text-sm mb-1">🛋️ الصالونات</div>
               <div className="text-xl font-bold">{property.salons}</div>
             </div>
-            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
               <div className="text-gray-400 text-sm mb-1">🚿 الحمامات</div>
               <div className="text-xl font-bold">{property.bathrooms}</div>
             </div>
             {property.floor > 0 && (
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
                 <div className="text-gray-400 text-sm mb-1">🏢 الطابق</div>
                 <div className="text-xl font-bold">{property.floor}</div>
-              </div>
-            )}
+              </div)
+            }
             {property.year > 0 && (
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
                 <div className="text-gray-400 text-sm mb-1">📅 سنة البناء</div>
                 <div className="text-xl font-bold">{property.year}</div>
               </div>
-            )}
+            )
           </div>
 
-          {/* المميزات الإضافية */}
+          {/* المميزات */}
           <div className="flex flex-wrap gap-3 mb-8">
             {property.garage && (
               <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
@@ -155,27 +172,27 @@ export default function PropertyDetailPage() {
               </span>
             )}
             {property.elevator && (
-              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🛗 مصعد
               </span>
             )}
             {property.balcony && (
-              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🌿 بلكون
               </span>
             )}
             {property.garden && (
-              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🌳 حديقة
               </span>
             )}
             {property.pool && (
-              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🏊 مسبح
               </span>
             )}
             {property.guard && (
-              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 👮 حراسة
               </span>
             )}
@@ -248,62 +265,242 @@ export default function PropertyDetailPage() {
             </div>
           )}
 
-          {/* ✅✅✅ للزوار والموظفين - نموذج الاستفسار */}
+          {/* ✅✅✅ للزوار والموظفين - نموذج الاستفسار! */}
           {!isAdmin && (
-            <div className="mb-8">
-              <div className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40 p-6 rounded-xl border border-emerald-700/50">
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+            <div 
+              className="mb-8"
+            >
+              <div 
+                className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40 p-6 rounded-xl border border-emerald-700/50"
+              >
+                <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                   📩 مهتم بهذا العقار؟
                 </h3>
                 <p className="text-gray-400 text-sm mb-4">
-                  تواصل معنا وسنرد عليك في أقرب وقت ممكن
+                  تواصل معنا وسنرد عليك في أقرب وقت ممكن!
                 </p>
                 
-                <button
-                  onClick={() => alert('شكراً على اهتمامك!\n\nسيتم التواصل معك قريباً عبر:\n- البريد الإلكتروني\n- أو رقم الهاتف\n\nأو يمكنك زيارة مكتبنا')}
-                  className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.02]"
-                >
-                  📞 طلب التواصل بشأن هذا العقار
-                </button>
+                <div className="space-y-4">
+                  {/* ✅ 3 أزرار سريعة - كلها تؤدي لنفسحة واحدة */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    
+                    {/* زر زيارة */}
+                    <button
+                      onClick={() => {
+                        setShowInquiryModal(true);
+                        setInquiryType('زيارة');
+                      }}
+                      className="flex flex-col items-center gap-2 p-4 bg-blue-600/20 hover:bg-blue-700 rounded-xl font-medium transition-all duration-200 hover:scale-[1.05] shadow-lg hover:shadow-blue-500/25"
+                    >
+                      <span className="text-2xl">📞</span>
+                      <span className="text-xs opacity-75">أريد زيارة العقار</span>
+                      <span className="text-xs opacity-60">(مجاناً مجاناً)</span>
+                    </button>
 
-                <div className="mt-4 pt-4 border-t border-emerald-800/50">
-                  <p className="text-xs text-gray-500 text-center">
-                    ⏰ وقت الرد: خلال 24 ساعة في أيام العمل
-                  </p>
-                </div>
+                    {/* زر شراء */}
+                    <button
+                      onClick={() => {
+                        setShowInquiryModal(true);
+                        setInquiryType('شراء');
+                      }}
+                      className="flex flex-col items-center gap-2 p-4 bg-emerald-600/20 hover:bg-emerald-700 rounded-xl font-medium transition-all duration-200 hover:scale-[1.05] shadow-lg hover:shadow-emerald-500/25"
+                    >
+                      <span className="text-2xl">🛒</span>
+                      <span className="text-xs opacity-75">أريد شراء هذا العقار!</span>
+                      <span className="text-xs opacity-60">(سعر مناسب جداً!)</span>
+                    </button>
+
+                    {/* زر كراء */}
+                    <button
+                      onClick={() => {
+                        setShowInquiryModal(true);
+                        setInquiryType('كراء');
+                      }}
+                      className="flex flex-col items-center gap-2 p-4 bg-purple-600/20 hover:bg-purple-700 rounded-xl font-medium transition-all duration-200 hover:scale-[1.05] shadow-lg hover:shadow-purple-500/25"
+                    >
+                      <span className="text-2xl">🔑</span>
+                      <span className="text-xs opacity-75">أرغب في استئجار عقار!</span>
+                      <span className="text-xs opacity-60">(سعر مناسب جداً!)</span>
+                    </button>
+                  </div>
+                  
+                  {/* ✅ زر إرسال */}
+                  <button
+                    type="submit"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      
+                      if (!inquiryForm.name || !inquiryForm.phone) {
+                        alert("الرجاء إدخل اسمك ورقم هاتفك أولاً");
+                        return;
+                      }
+                      
+                      try {
+                        // ✅✅✅ 1. حفظ الاستفسار في Firebase
+                        const inquiryData = {
+                          ...inquiryForm,
+                          id: Date.now().toString(),
+                          propertyId: property.id,
+                          propertyName: `${property.propertyType} في ${property.city}`,
+                          propertyCity: property.city,
+                          status: 'جديد',
+                          createdAt: new Date(),
+                          clientId: 'guest-' + inquiryForm.phone, // زائر مؤقت
+                          clientName: inquiryForm.name,
+                          clientPhone: inquiryForm.phone,
+                          notes: inquiryForm.notes,
+                        };
+                        
+                        console.log("🔄 جاري حفظ الاستفسار...");
+                        
+                        // ✅✅✅ 2. إرسال إشعار للمدير
+                        await addNotification({
+                          type: 'inquiry',
+                          clientName: inquiryForm.name,
+                          clientPhone: inquiryForm.phone,
+                          inquiryType: inquiryType,
+                          propertyTitle: `${property.propertyType} في ${property.city}`,
+                          propertyCity: property.city,
+                          notes: inquiryForm.notes,
+                        });
+                        
+                        // ✅✅✅ 3. حفظظ في Firebase (اختياري)
+                        await fbAddRequest(inquiryData);
+                        
+                        dispatch({ 
+                          type: "SHOW_TOAST", 
+                          payload: { 
+                            message: `✅ تم إرسال طلب ${inquiryType}! سنتواصل معك قريباً 📧`,
+                            type: "success" 
+                          });
+                          
+                        // ✅✅✅ 4 - أغلق Modal وأنتقل للصفحة الرئيسية
+                        setShowInquiryModal(false);
+                        setInquiryForm({ name: '', phone: '', notes: '' });
+                        
+                        // ✅✅ 5 - إعادة التوجيه للصفحة الرئيسية
+                        setTimeout(() => {
+                          router.push('/properties');
+                        }, 1500); // بعد 1.5 ثانية
+
+                      }}>
+                        <input type="hidden" value={showInquiryModal.toString()} readOnly />
+                      </form>
+                  </div>
+                  
+                  {/* ✅ Modal الاستفسار */}
+                  {showInquiryModal && (
+                    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center z-[9999]">
+                      <div className="bg-slate-800 rounded-2xl p-8 max-w-md mx-auto shadow-2xl border border-slate-700">
+                        
+                        {/* أيقونة إغلاق */}
+                        <button
+                          onClick={() => setShowInModal(false)}
+                          className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full text-xl font-bold hover:bg-red-700 hover:bg-red-700 transition"
+                          title="إغلاق"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                        {/* Header */}
+                        <div className="text-center mb-6">
+                          <div className="text-4xl mb-2 animate-bounce inline-block">📝</div>
+                          <h2 className="text-2xl font-bold text-white mb-2">
+                            {inquiryType === 'زيارة' ? '📞' : 
+                             inquiryType === 'شراء' ? '🛒' : '🔑'}
+                          </h2>
+                          
+                          <p className="text-gray-400 text-sm">
+                            عقار: **{property.propertyType}** في **{property.city}**
+                          </p>
+                        </div>
+
+                        {/* النموذج */}
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            
+                          if (!inquiryForm.name || !inquiryForm.phone) {
+                              alert("يرجب إدخل اسمك ورقم هاتفك");
+                              return;
+                            }
+                            
+                          try {
+                            // ✅ حفظ الاستفسار
+                            const inquiryData = {
+                              ...inquiryForm,
+                              id: Date.now().toString(),
+                              propertyId: property.id,
+                              propertyName: `${property.propertyType} في ${property.city}`,
+                              propertyCity: property.city,
+                              status: 'جديد',
+                              createdAt: new Date(),
+                              clientId: 'guest-' + inquiryForm.phone,
+                              clientName: inquiryForm.name,
+                              clientPhone: inquiryForm.phone,
+                              notes: inquiryForm.notes,
+                            };
+                            
+                            console.log("🔄 جاري حفظ الاستفسار...");
+                            
+                            // ✅ إرسال إشعار للمدير
+                            await addNotification({
+                              type: 'inquiry',
+                              clientName: inquiryForm.name,
+                              clientPhone: inquiryForm.phone,
+                              inquiryType: inquiryType,
+                              propertyTitle: `${property.propertyType} في ${property.city}`,
+                              propertyCity: property.city,
+                              notes: inquiryForm.notes,
+                            });
+                            
+                            // ✅ حفظظ في Firebase
+                            await fbAddRequest(inquiryData);
+                            
+                            dispatch({ 
+                              type: "SHOW_TOAST", 
+                              payload: { 
+                                message: `✅ تم إرسال طلب ${inquiryType}! 📧`,
+                                type: "success" 
+                              });
+                            
+                            // ✅ أغلق Modal
+                            setShowInquiryModal(false);
+                            setInquiryForm({ name: '', phone: '', notes: '' });
+                            
+                            // ✅ إعادة التوجيه
+                            setTimeout(() => {
+                              router.push('/properties');
+                            }, 2000);
+                            
+                          }} catch (error) {
+                            console.error("❌ خطأ:", error);
+                            dispatch({ 
+                              type: "SHOW_TOAST", 
+                              payload: { message: "❌ فشل الإرسال!", type: "error" }
+                            );
+                            setShowInModal(false);
+                          }}
+                        }}
+                      </form>
+                    </div>
+                  </div>
+                )}
+              )}
+              
+              {/* ===== أزرار أسفل الصفحة ===== */}
+              <div className="mt-6 pt-4 border-t border-slate-700">
+                <Link
+                  href="/"
+                  className="text-emerald-400 underline text-sm hover:text-emerald-600 transition-colors duration-200"
+                >
+                  ← العودة للرئيسية
+                </Link>
               </div>
             </div>
-          )}
-
-          {/* ===== أزرار أسفل الصفحة ===== */}
-          <div className="flex gap-4 mt-6">
-            <button
-              onClick={() => dispatch({ type: "TOGGLE_FAV", payload: property.id })}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 px-6 py-3.5 rounded-xl font-bold transition-all duration-200 hover:scale-[1.02] border border-slate-600"
-            >
-              {isFav ? "❤️ إزالة من المفضلة" : "🤍 إضافة للمفضلة"}
-            </button>
-            
-            {/* ✅ واتساب عام - لجميع المستخدمين */}
-            <a
-              href={`https://wa.me/212600000000?text=مرحباً، أنا مهتم بالعقار #${property.id} - ${property.propertyType} في ${property.city}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 bg-green-600 hover:bg-green-700 px-6 py-3.5 rounded-xl font-bold text-center transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
-            >
-              💬 تواصل معنا
-            </a>
-          </div>
-
-          {/* معلومات إضافية */}
-          <div className="mt-6 pt-6 border-t border-slate-700 text-center">
-            <p className="text-xs text-gray-500">
-              🔖 رقم العقار: #{property.id} | 
-              آخر تحديث: {new Date(property.updatedAt).toLocaleDateString('ar-MA')}
-            </p>
           </div>
         </div>
       </div>
-    </div>
   );
 }
