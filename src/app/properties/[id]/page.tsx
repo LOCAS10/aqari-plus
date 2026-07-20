@@ -417,4 +417,91 @@ export default function PropertyDetailPage() {
                     
                     <button
                       onClick={() => handleSubmitInquiry()}
-                      className="w-full py-
+                      className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      🚀 إرسال طلب {inquiryType}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* ===== Modal الاستفسار ===== */}
+              {showInquiryModal && (
+                <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                  <div className="bg-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-700 relative">
+                    
+                    {/* زر الإغلاق */}
+                    <button
+                      onClick={() => setShowInquiryModal(false)}
+                      className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full text-xl font-bold transition"
+                      title="إغلاق"
+                    >
+                      ✕
+                    </button>
+
+                    {/* عنوان Modal */}
+                    <div className="text-center mb-6">
+                      <div className="text-4xl mb-2 animate-bounce inline-block">📝</div>
+                      <h2 className="text-2xl font-bold text-white mb-2">
+                        {inquiryType === 'زيارة' ? '📞 طلب زيارة' : 
+                         inquiryType === 'شراء' ? '🛒 طلب شراء' : '🔑 طلب كراء'}
+                      </h2>
+                      <p className="text-gray-400 text-sm">
+                        عقار: {property.propertyType} في {property.city}
+                      </p>
+                    </div>
+
+                    {/* نموذج الإدخال */}
+                    <form onSubmit={handleSubmitInquiry} className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="الاسم الكامل *"
+                        value={inquiryForm.name}
+                        onChange={(e) => setInquiryForm({...inquiryForm, name: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                        required
+                      />
+                      <input
+                        type="tel"
+                        placeholder="رقم الهاتف *"
+                        value={inquiryForm.phone}
+                        onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                        dir="ltr"
+                        required
+                      />
+                      <textarea
+                        placeholder="ملاحظات إضافية (اختياري)"
+                        value={inquiryForm.notes}
+                        onChange={(e) => setInquiryForm({...inquiryForm, notes: e.target.value})}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                      
+                      <button
+                        type="submit"
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        ✅ تأكيد وإرسال
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
+              
+              {/* رابط العودة */}
+              <div className="mt-6 pt-4 border-t border-slate-700">
+                <Link
+                  href="/properties"
+                  className="text-emerald-400 underline text-sm hover:text-emerald-600 transition-colors duration-200"
+                >
+                  ← العودة لقائمة العقارات
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
