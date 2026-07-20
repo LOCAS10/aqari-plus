@@ -88,7 +88,7 @@ export default function PropertyDetailPage() {
         propertyId: property.id,
         propertyName: `${property.propertyType} في ${property.city}`,
         propertyCity: property.city,
-        operation: property.operation === "بيع" ? "شراء" : property.operation,
+        operation: (property.operation === "بيع" ? "شراء" : property.operation) as "شراء" | "كراء" | "رهن",
         propertyType: property.propertyType,
         city: property.city,
         district: property.district,
