@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // ✅ إضافة الاستيراد الناقصة
 import { useAppContext } from "@/contexts/AppContext";
 import { displayPrice } from "@/components/PropertyCard";
 // ✅✅✅ استيراد دوال الإشعارات
 import { addNotification } from "@/lib/notifications";
-// ✅✅✅ استيراد دوال Firestore (لحفظظ الاستفسار)
+// ✅✅✅ استيراد دوال Firestore (لحفظ الاستفسار)
 import { addRequest as fbAddRequest } from "@/lib/firestore";
 
 export default function PropertyDetailPage() {
@@ -17,7 +18,7 @@ export default function PropertyDetailPage() {
   const property = state.properties.find(p => p.id === id);
   const router = useRouter();
   
-  // ✅✅✅ حالة الحفظظ
+  // ✅✅✅ حالة الحفظ
   const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [inquiryType, setInquiryType] = useState<'زيارة' | 'شراء' | 'كراء'>('شراء');
   const [inquiryForm, setInquiryForm] = useState({
@@ -54,8 +55,70 @@ export default function PropertyDetailPage() {
     }
   };
 
-  // ✅✅✅ دالة فتحقق من تسجيل الدخول
+  // ✅✅✅ دالة التحقق من تسجيل الدخول
   const isLoggedIn = !!state.currentUser;
+
+  // ✅✅✅ دالة إرسال الاستفسار (للتجنب تكرار الكود)
+  const handleSubmitInquiry = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    if (!inquiryForm.name || !inquiryForm.phone) {
+      alert("الرجاء إدخال اسمك ورقم هاتفك");
+      return;
+    }
+    
+    try {
+      const inquiryData = {
+        ...inquiryForm,
+        id: Date.now().toString(),
+        propertyId: property.id,
+        propertyName: `${property.propertyType} في ${property.city}`,
+        propertyCity: property.city,
+        status: 'جديد',
+        createdAt: new Date(),
+        clientId: 'guest-' + inquiryForm.phone,
+        clientName: inquiryForm.name,
+        clientPhone: inquiryForm.phone,
+        notes: inquiryForm.notes,
+      };
+      
+      console.log("🔄 جاري حفظ الاستفسار...");
+      
+      await addNotification({
+        type: 'inquiry',
+        clientName: inquiryForm.name,
+        clientPhone: inquiryForm.phone,
+        inquiryType: inquiryType,
+        propertyTitle: `${property.propertyType} في ${property.city}`,
+        propertyCity: property.city,
+        notes: inquiryForm.notes,
+      });
+      
+      await fbAddRequest(inquiryData);
+      
+      dispatch({ 
+        type: "SHOW_TOAST", 
+        payload: { 
+          message: `✅ تم إرسال طلب ${inquiryType}! سنتواصل معك قريباً 📧`,
+          type: "success" 
+        }
+      });
+      
+      setShowInquiryModal(false);
+      setInquiryForm({ name: '', phone: '', notes: '' });
+      
+      setTimeout(() => {
+        router.push('/properties');
+      }, 1500);
+      
+    } catch (error) {
+      console.error("❌ خطأ:", error);
+      dispatch({ 
+        type: "SHOW_TOAST", 
+        payload: { message: "❌ فشل الإرسال!", type: "error" }
+      });
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4">
@@ -138,30 +201,30 @@ export default function PropertyDetailPage() {
               <div className="text-gray-400 text-sm mb-1">📐 المساحة</div>
               <div className="text-xl font-bold">{property.area} م²</div>
             </div>
-            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
               <div className="text-gray-400 text-sm mb-1">🛏 الغرف</div>
               <div className="text-xl font-bold">{property.rooms}</div>
             </div>
-            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
               <div className="text-gray-400 text-sm mb-1">🛋️ الصالونات</div>
               <div className="text-xl font-bold">{property.salons}</div>
             </div>
-            <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+            <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
               <div className="text-gray-400 text-sm mb-1">🚿 الحمامات</div>
               <div className="text-xl font-bold">{property.bathrooms}</div>
             </div>
             {property.floor > 0 && (
-              <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
                 <div className="text-gray-400 text-sm mb-1">🏢 الطابق</div>
                 <div className="text-xl font-bold">{property.floor}</div>
-              </div)
-            }
+              </div> // ✅ تم الإصلاح: كان </div)
+            )}
             {property.year > 0 && (
-              <div className="bg-slice-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
                 <div className="text-gray-400 text-sm mb-1">📅 سنة البناء</div>
                 <div className="text-xl font-bold">{property.year}</div>
-              </div>
-            )
+              </div> // ✅ تم الإصلاح: كان </div)
+            )}
           </div>
 
           {/* المميزات */}
@@ -172,27 +235,27 @@ export default function PropertyDetailPage() {
               </span>
             )}
             {property.elevator && (
-              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🛗 مصعد
               </span>
             )}
             {property.balcony && (
-              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🌿 بلكون
               </span>
             )}
             {property.garden && (
-              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🌳 حديقة
               </span>
             )}
             {property.pool && (
-              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 🏊 مسبح
               </span>
             )}
             {property.guard && (
-              <span className="bg-sate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
+              <span className="bg-slate-700/70 px-4 py-2 rounded-full text-sm border border-slate-600">
                 👮 حراسة
               </span>
             )}
@@ -267,12 +330,8 @@ export default function PropertyDetailPage() {
 
           {/* ✅✅✅ للزوار والموظفين - نموذج الاستفسار! */}
           {!isAdmin && (
-            <div 
-              className="mb-8"
-            >
-              <div 
-                className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40 p-6 rounded-xl border border-emerald-700/50"
-              >
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-emerald-900/40 to-teal-900/40 p-6 rounded-xl border border-emerald-700/50">
                 <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                   📩 مهتم بهذا العقار؟
                 </h3>
@@ -281,7 +340,7 @@ export default function PropertyDetailPage() {
                 </p>
                 
                 <div className="space-y-4">
-                  {/* ✅ 3 أزرار سريعة - كلها تؤدي لنفسحة واحدة */}
+                  {/* ✅ 3 أزرار سريعة */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     
                     {/* زر زيارة */}
@@ -294,7 +353,7 @@ export default function PropertyDetailPage() {
                     >
                       <span className="text-2xl">📞</span>
                       <span className="text-xs opacity-75">أريد زيارة العقار</span>
-                      <span className="text-xs opacity-60">(مجاناً مجاناً)</span>
+                      <span className="text-xs opacity-60">(مجاناً)</span>
                     </button>
 
                     {/* زر شراء */}
@@ -324,183 +383,120 @@ export default function PropertyDetailPage() {
                     </button>
                   </div>
                   
-                  {/* ✅ زر إرسال */}
-                  <button
-                    type="submit"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      
-                      if (!inquiryForm.name || !inquiryForm.phone) {
-                        alert("الرجاء إدخل اسمك ورقم هاتفك أولاً");
-                        return;
-                      }
-                      
-                      try {
-                        // ✅✅✅ 1. حفظ الاستفسار في Firebase
-                        const inquiryData = {
-                          ...inquiryForm,
-                          id: Date.now().toString(),
-                          propertyId: property.id,
-                          propertyName: `${property.propertyType} في ${property.city}`,
-                          propertyCity: property.city,
-                          status: 'جديد',
-                          createdAt: new Date(),
-                          clientId: 'guest-' + inquiryForm.phone, // زائر مؤقت
-                          clientName: inquiryForm.name,
-                          clientPhone: inquiryForm.phone,
-                          notes: inquiryForm.notes,
-                        };
-                        
-                        console.log("🔄 جاري حفظ الاستفسار...");
-                        
-                        // ✅✅✅ 2. إرسال إشعار للمدير
-                        await addNotification({
-                          type: 'inquiry',
-                          clientName: inquiryForm.name,
-                          clientPhone: inquiryForm.phone,
-                          inquiryType: inquiryType,
-                          propertyTitle: `${property.propertyType} في ${property.city}`,
-                          propertyCity: property.city,
-                          notes: inquiryForm.notes,
-                        });
-                        
-                        // ✅✅✅ 3. حفظظ في Firebase (اختياري)
-                        await fbAddRequest(inquiryData);
-                        
-                        dispatch({ 
-                          type: "SHOW_TOAST", 
-                          payload: { 
-                            message: `✅ تم إرسال طلب ${inquiryType}! سنتواصل معك قريباً 📧`,
-                            type: "success" 
-                          });
-                          
-                        // ✅✅✅ 4 - أغلق Modal وأنتقل للصفحة الرئيسية
-                        setShowInquiryModal(false);
-                        setInquiryForm({ name: '', phone: '', notes: '' });
-                        
-                        // ✅✅ 5 - إعادة التوجيه للصفحة الرئيسية
-                        setTimeout(() => {
-                          router.push('/properties');
-                        }, 1500); // بعد 1.5 ثانية
-
-                      }}>
-                        <input type="hidden" value={showInquiryModal.toString()} readOnly />
-                      </form>
+                  {/* نموذج الإدخال السريع */}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="الاسم الكامل *"
+                      value={inquiryForm.name}
+                      onChange={(e) => setInquiryForm({...inquiryForm, name: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="رقم الهاتف *"
+                      value={inquiryForm.phone}
+                      onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                      dir="ltr"
+                    />
+                    <textarea
+                      placeholder="ملاحظات إضافية (اختياري)"
+                      value={inquiryForm.notes}
+                      onChange={(e) => setInquiryForm({...inquiryForm, notes: e.target.value})}
+                      rows={3}
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
+                    />
+                    
+                    {/* ✅ زر إرسال */}
+                    <button
+                      onClick={() => handleSubmitInquiry()}
+                      className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-emerald-500/25"
+                    >
+                      🚀 إرسال طلب {inquiryType}
+                    </button>
                   </div>
-                  
-                  {/* ✅ Modal الاستفسار */}
-                  {showInquiryModal && (
-                    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center z-[9999]">
-                      <div className="bg-slate-800 rounded-2xl p-8 max-w-md mx-auto shadow-2xl border border-slate-700">
-                        
-                        {/* أيقونة إغلاق */}
-                        <button
-                          onClick={() => setShowInModal(false)}
-                          className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full text-xl font-bold hover:bg-red-700 hover:bg-red-700 transition"
-                          title="إغلاق"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                </div>
+              </div>
+              
+              {/* ✅ Modal الاستفسار */}
+              {showInquiryModal && (
+                <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                  <div className="bg-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-700 relative">
+                    
+                    {/* أيقونة إغلاق */}
+                    <button
+                      onClick={() => setShowInquiryModal(false)} // ✅ تم الإصلاح: كان setShowInModal
+                      className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full text-xl font-bold transition"
+                      title="إغلاق"
+                    >
+                      ✕
+                    </button>
 
-                        {/* Header */}
-                        <div className="text-center mb-6">
-                          <div className="text-4xl mb-2 animate-bounce inline-block">📝</div>
-                          <h2 className="text-2xl font-bold text-white mb-2">
-                            {inquiryType === 'زيارة' ? '📞' : 
-                             inquiryType === 'شراء' ? '🛒' : '🔑'}
-                          </h2>
-                          
-                          <p className="text-gray-400 text-sm">
-                            عقار: **{property.propertyType}** في **{property.city}**
-                          </p>
-                        </div>
-
-                        {/* النموذج */}
-                        <form 
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            
-                          if (!inquiryForm.name || !inquiryForm.phone) {
-                              alert("يرجب إدخل اسمك ورقم هاتفك");
-                              return;
-                            }
-                            
-                          try {
-                            // ✅ حفظ الاستفسار
-                            const inquiryData = {
-                              ...inquiryForm,
-                              id: Date.now().toString(),
-                              propertyId: property.id,
-                              propertyName: `${property.propertyType} في ${property.city}`,
-                              propertyCity: property.city,
-                              status: 'جديد',
-                              createdAt: new Date(),
-                              clientId: 'guest-' + inquiryForm.phone,
-                              clientName: inquiryForm.name,
-                              clientPhone: inquiryForm.phone,
-                              notes: inquiryForm.notes,
-                            };
-                            
-                            console.log("🔄 جاري حفظ الاستفسار...");
-                            
-                            // ✅ إرسال إشعار للمدير
-                            await addNotification({
-                              type: 'inquiry',
-                              clientName: inquiryForm.name,
-                              clientPhone: inquiryForm.phone,
-                              inquiryType: inquiryType,
-                              propertyTitle: `${property.propertyType} في ${property.city}`,
-                              propertyCity: property.city,
-                              notes: inquiryForm.notes,
-                            });
-                            
-                            // ✅ حفظظ في Firebase
-                            await fbAddRequest(inquiryData);
-                            
-                            dispatch({ 
-                              type: "SHOW_TOAST", 
-                              payload: { 
-                                message: `✅ تم إرسال طلب ${inquiryType}! 📧`,
-                                type: "success" 
-                              });
-                            
-                            // ✅ أغلق Modal
-                            setShowInquiryModal(false);
-                            setInquiryForm({ name: '', phone: '', notes: '' });
-                            
-                            // ✅ إعادة التوجيه
-                            setTimeout(() => {
-                              router.push('/properties');
-                            }, 2000);
-                            
-                          }} catch (error) {
-                            console.error("❌ خطأ:", error);
-                            dispatch({ 
-                              type: "SHOW_TOAST", 
-                              payload: { message: "❌ فشل الإرسال!", type: "error" }
-                            );
-                            setShowInModal(false);
-                          }}
-                        }}
-                      </form>
+                    {/* Header */}
+                    <div className="text-center mb-6">
+                      <div className="text-4xl mb-2 animate-bounce inline-block">📝</div>
+                      <h2 className="text-2xl font-bold text-white mb-2">
+                        {inquiryType === 'زيارة' ? '📞 طلب زيارة' : 
+                         inquiryType === 'شراء' ? '🛒 طلب شراء' : '🔑 طلب كراء'}
+                      </h2>
+                      
+                      <p className="text-gray-400 text-sm">
+                        عقار: {property.propertyType} في {property.city}
+                      </p>
                     </div>
+
+                    {/* النموذج */}
+                    <form onSubmit={handleSubmitInquiry} className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="الاسم الكامل *"
+                        value={inquiryForm.name}
+                        onChange={(e) => setInquiryForm({...inquiryForm, name: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                        required
+                      />
+                      <input
+                        type="tel"
+                        placeholder="رقم الهاتف *"
+                        value={inquiryForm.phone}
+                        onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                        dir="ltr"
+                        required
+                      />
+                      <textarea
+                        placeholder="ملاحظات إضافية (اختياري)"
+                        value={inquiryForm.notes}
+                        onChange={(e) => setInquiryForm({...inquiryForm, notes: e.target.value})}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
+                      />
+                      
+                      <button
+                        type="submit"
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        ✅ تأكيد وإرسال
+                      </button>
+                    </form>
                   </div>
-                )}
+                </div>
               )}
               
               {/* ===== أزرار أسفل الصفحة ===== */}
               <div className="mt-6 pt-4 border-t border-slate-700">
                 <Link
-                  href="/"
+                  href="/properties"
                   className="text-emerald-400 underline text-sm hover:text-emerald-600 transition-colors duration-200"
                 >
-                  ← العودة للرئيسية
+                  ← العودة لقائمة العقارات
                 </Link>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
+    </div>
   );
 }
