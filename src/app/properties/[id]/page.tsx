@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import { displayPrice } from "@/components/PropertyCard";
 import { addNotification } from "@/lib/notifications";
-import { addRequest as fbAddRequest } from "@/lib/firestore";
+import { addRequest as fbAddRequest, addClient as fbAddClient } from "@/lib/firestore";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 // ✅ نوع الاستفسار
 type InquiryType = 'زيارة' | 'شراء' | 'كراء';
@@ -68,7 +70,7 @@ export default function PropertyDetailPage() {
     }
   };
 
-  // ✅✅✅ دالة إرسال الاستفسار - محسنة ومكتملة
+  // ✅✅✅ دالة إرسال الاستفسار - محسنة ومكتملة مع إضافة العميل
   const handleSubmitInquiry = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     
@@ -122,8 +124,43 @@ export default function PropertyDetailPage() {
         read: false,
       });
       
-      // ✅ حفظ في Firestore
+      // ✅ حفظ الطلب في Firestore
       await fbAddRequest(inquiryData);
+      console.log("✅ تم حفظ الطلب!");
+      
+      // ✅✅✅ إضافة/التحقق من العميل في جدول العملاء
+      try {
+        const phoneNumber = inquiryForm.phone.trim();
+        
+        // البحث عن العميل برقم الهاتف
+        const clientsRef = collection(db, "clients");
+        const q = query(clientsRef, where("phone", "==", phoneNumber));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          // ✅ العميل موجود مسبقاً - لا نكرره
+          const existingClient = querySnapshot.docs[0].data();
+          console.log(`✅ العميل موجود مسبقاً: ${existingClient.name}`);
+          console.log(`💡 سجل اهتمام جديد: ${inquiryType} - ${property.propertyType} في ${property.city}`);
+          
+        } else {
+          // ❌ العميل غير موجود - إضافة جديد
+          const clientData = {
+            name: inquiryForm.name.trim(),
+            phone: phoneNumber,
+            email: "",
+            notes: `عميل محتمل - أول اهتمام: ${property.propertyType} في ${property.city} (${inquiryType})`,
+            createdAt: new Date(),
+          };
+          
+          await fbAddClient(clientData);
+          console.log("✅ تم إضافة عميل جديد في جدول العملاء!");
+        }
+        
+      } catch (clientError) {
+        console.warn("⚠️ فشل التحقق من العميل:", clientError);
+        // لا نوقف العملية - الطلب تم حفظه بالفعل
+      }
       
       // ✅ رسالة نجاح
       dispatch({ 
