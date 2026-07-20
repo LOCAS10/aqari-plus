@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
-import ClientCard from "@/components/ClientCard";
 
 export default function DashboardClientsPage() {
   const { state, dispatch } = useAppContext();
@@ -50,11 +49,18 @@ export default function DashboardClientsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {state.clients.map((c: any) => (
-            <div key={c.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-              <ClientCard client={c} />
+            <div key={c.id} className="bg-slate-800 rounded-xl p-5 border border-slate-700 hover:border-slate-600 transition">
+              {/* ✅ عرض بيانات العميل مباشرة */}
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-white mb-2">{c.name || "بدون اسم"}</h3>
+                <p className="text-gray-400 text-sm mb-1">📱 {c.phone || "بدون هاتف"}</p>
+                {c.city && <p className="text-gray-500 text-xs">📍 {c.city}</p>}
+                {c.notes && <p className="text-gray-500 text-xs mt-2 italic">{c.notes}</p>}
+              </div>
+              
               <button
                 onClick={() => handleDelete(c.id)}
-                className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold"
+                className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition"
               >
                 🗑️ حذف
               </button>
