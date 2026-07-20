@@ -145,13 +145,15 @@ export default function PropertyDetailPage() {
           
         } else {
           // ❌ العميل غير موجود - إضافة جديد
-          const clientData = {
-            name: inquiryForm.name.trim(),
-            phone: phoneNumber,
-            email: "",
-            notes: `عميل محتمل - أول اهتمام: ${property.propertyType} في ${property.city} (${inquiryType})`,
-            createdAt: new Date(),
-          };
+        const clientData = {
+  name: inquiryForm.name.trim(),
+  phone: phoneNumber,
+  email: "",
+  city: property.city || "",
+  whatsapp: "",
+  notes: `عميل محتمل - أول اهتمام: ${property.propertyType} في ${property.city} (${inquiryType})`,
+  createdAt: new Date(),
+};
           
           await fbAddClient(clientData);
           console.log("✅ تم إضافة عميل جديد في جدول العملاء!");
