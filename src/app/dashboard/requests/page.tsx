@@ -3,51 +3,46 @@
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import RequestCard from "@/components/RequestCard";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
 export default function DashboardRequestsPage() {
   const { state, dispatch } = useAppContext();
 
-  // ✅✅✅ حذف باستخدام Fetch API مباشرة
+  // ✅ Soft Delete - وضع علامة محذوف بدلاً من الحذف الفعلي
   const handleDelete = async (id: string) => {
-    if (!id || !confirm(`حذف الطلب (${id})؟`)) return;
+    if (!id || !confirm(`حذف الطلب (${id})؟\n\n(يمكن استرجاعه لاحقاً)`)) return;
 
     try {
-      console.log("🗑️ جاري الحذف...", id);
+      console.log("🗑️ جاري حذف الطلب (soft delete)...", id);
       
-      // استخدام Fetch API مباشرة لـ Firestore REST API
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/aqari-plus-db/databases/(default)/documents/requests/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("📊 حالة الاستجابة:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ تفاصيل الخطأ:", errorData);
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-
-      console.log("✅ تم الحذف بنجاح!");
+      const docRef = doc(db, "requests", id);
       
-      // حذف من الواجهة
+      // ✅ إضافة علامة الحذف بدلاً من الحذف الفعلي
+      await updateDoc(docRef, {
+        deleted: true,
+        deletedAt: new Date().toISOString(),
+        deletedBy: "admin",
+      });
+      
+      console.log("✅ تم حذف الطلب (soft delete)!");
+      
+      // إزالة من الواجهة فقط
       dispatch({ type: "DELETE_REQUEST", payload: id });
       
       dispatch({ 
         type: "SHOW_TOAST", 
-        payload: { message: "🗑️ تم الحذف!", type: "success" } 
+        payload: { message: "🗑️ تم حذف الطلب!", type: "success" } 
       });
 
     } catch (error: any) {
-      console.error("❌❌❌ فشل الحذف:", error);
-      alert(`فشل الحذف!\n\n${error.message}\n\nافتح Console (F12) للمزيد`);
+      console.error("❌ فشل:", error);
+      alert(`فشل: ${error.message}`);
     }
   };
+
+  // ✅ تصفية الطلبات المحذوفة من العرض
+  const activeRequests = state.requests.filter((r: any) => !r.deleted);
 
   return (
     <div className="p-6">
@@ -58,14 +53,26 @@ export default function DashboardRequestsPage() {
         </Link>
       </div>
 
-      {state.requests.length === 0 ? (
+      {/* ✅ عرض عدد الطلبات الفعلية */}
+      <div className="mb-4 p-3 bg-slate-800 rounded-lg">
+        <span className="text-gray-400">
+          عدد الطلبات: <strong className="text-emerald-400">{activeRequests.length}</strong>
+          {activeRequests.length !== state.requests.length && (
+            <span className="text-gray-500 text-sm mr-4">
+              ({state.requests.length - activeRequests.length} محذوفة)
+            </span>
+          )}
+        </span>
+      </div>
+
+      {activeRequests.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">📭</div>
           <p className="text-gray-400 text-xl">لا توجد طلبات</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {state.requests.map((r: any) => (
+          {activeRequests.map((r: any) => (
             <div key={r.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
               <RequestCard request={r} />
               <button
