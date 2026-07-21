@@ -27,7 +27,7 @@ export default function PropertyCard({
   property,
   actions = false,
 }: {
-  property: Property;
+  property: Property & { _firestoreId?: string; __realId?: string };
   actions?: boolean;
 }) {
   const { state, dispatch } = useAppContext();
@@ -52,21 +52,27 @@ export default function PropertyCard({
     }
   };
 
-  // ✅✅✅ دالة الحذف مع API
+  // ✅✅✅ دالة الحذف مع API - تستخدم Firestore ID الحقيقي!
   const handleDelete = async () => {
     if (!confirm('هل أنت متأكد من حذف هذا العقار؟')) {
       return;
     }
 
     try {
-      console.log("🗑️ جاري حذف العقار...", property.id);
+      // ✅✅✅ استخدام Firestore ID الحقيقي!
+      const realId = property._firestoreId || property.__realId || property.id;
+      
+      console.log("🗑️ جاري حذف العقار...");
+      console.log("🔑 ID المستخدم:", realId);
+      console.log("🔍 property.id:", property.id);
+      console.log("🔍 _firestoreId:", property._firestoreId);
       
       const response = await fetch('/api/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           collectionName: 'properties',
-          id: property.id,
+          id: realId,  // ✅✅✅ ID الحقيقي من Firestore!
         }),
       });
 
@@ -79,6 +85,7 @@ export default function PropertyCard({
 
       console.log('✅ تم الحذف بنجاح!');
       
+      // تحديث الواجهة
       dispatch({ type: "DELETE_PROPERTY", payload: property.id });
       
       dispatch({ 
