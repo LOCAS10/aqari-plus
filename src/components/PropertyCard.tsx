@@ -70,9 +70,10 @@ export default function PropertyCard({
       const response = await fetch('/api/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          collectionName: 'properties',
-          id: realId,  // ✅✅✅ ID الحقيقي من Firestore!
+       body: JSON.stringify({
+  collectionName: 'properties',
+  id: property._firestoreId || property.__realId || property.id,  // ✅✅✅ صححته!
+}),
         }),
       });
 
