@@ -52,7 +52,7 @@ export default function PropertyCard({
     }
   };
 
-  // ✅✅✅ دالة الحذف الجديدة مع API
+  // ✅✅✅ دالة الحذف مع API
   const handleDelete = async () => {
     if (!confirm('هل أنت متأكد من حذف هذا العقار؟')) {
       return;
@@ -61,7 +61,6 @@ export default function PropertyCard({
     try {
       console.log("🗑️ جاري حذف العقار...", property.id);
       
-      // ✅ استدعاء API
       const response = await fetch('/api/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +79,6 @@ export default function PropertyCard({
 
       console.log('✅ تم الحذف بنجاح!');
       
-      // ✅ تحديث الواجهة
       dispatch({ type: "DELETE_PROPERTY", payload: property.id });
       
       dispatch({ 
@@ -175,4 +173,54 @@ export default function PropertyCard({
                   onClick={openWhatsapp}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium transition-colors duration-200 hover:scale-105"
                 >
-                  💬 و
+                  💬 واتساب
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* للزوار والموظفين */}
+        {!isAdmin && property.ownerName && (
+          <div className="mb-4">
+            <button
+              onClick={() => alert('شكراً على اهتمامك! سيتم التواصل معك قريباً.')}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-lg font-medium text-sm transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
+            >
+              📩 أرغب في الاستفسار عن هذا العقار
+            </button>
+            <p className="text-center text-xs text-gray-500 mt-1.5">
+              سيتم الرد عليك في أقرب وقت
+            </p>
+          </div>
+        )}
+
+        {/* أزرار الإجراءات */}
+        <div className="flex gap-2">
+          <Link
+            href={`/properties/${property.id}`}
+            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-center py-2 rounded-lg transition"
+          >
+            التفاصيل
+          </Link>
+          {actions && (
+            <>
+              <Link
+                href={`/dashboard/properties/form?id=${property.id}`}
+                className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition"
+              >
+                تعديل
+              </Link>
+              <button
+                onClick={handleDelete}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition"
+              >
+                حذف
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
