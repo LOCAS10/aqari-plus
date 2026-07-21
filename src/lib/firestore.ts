@@ -18,15 +18,20 @@ import { Property, Client, Request } from "./types";
 
 export const propertiesCollection = collection(db, "properties");
 
-// جلب كل العقارات
+// جلب كل العقارات - ✅✅✅ معدل لحفظ Firestore ID الحقيقي!
 export async function getAllProperties(): Promise<Property[]> {
   const snapshot = await getDocs(query(propertiesCollection, orderBy("createdAt", "desc")));
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt?.toDate() || new Date(),
-    updatedAt: doc.data().updatedAt?.toDate() || new Date(),
-  })) as Property[];
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return Object.assign({
+      // ✅✅✅ حفظ Firestore Document ID الحقيقي في حقول منفصلة
+      _firestoreId: doc.id,
+      __realId: doc.id,
+    }, data, {
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date(),
+    }) as Property & { _firestoreId: string; __realId: string };
+  });
 }
 
 // إضافة عقار

@@ -3,45 +3,42 @@
 import Link from "next/link";
 import { useAppContext } from "@/contexts/AppContext";
 import PropertyCard from "@/components/PropertyCard";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 
 export default function DashboardPropertiesPage() {
   const { state, dispatch } = useAppContext();
 
-  // ✅ حذف بالبحث عن العقار (يمكن استخدام ID أو عنوان)
+  // ✅✅✅ حذف عبر Server-Side API
   const handleDelete = async (propertyData: any) => {
     if (!propertyData?.id) {
-      alert("❌ لا يوجد ID لهذا العقار!");
+      alert("❌ لا يوجد ID!");
       return;
     }
 
-    if (!confirm(`حذف العقار (${propertyData.propertyType || 'بدون اسم'})؟\n⚠️ لا يمكن التراجع!`)) {
+    if (!confirm(`حذف العقار (${propertyData.propertyType || 'عقار'})؟\n⚠️ لا يمكن التراجع!`)) {
       return;
     }
 
     try {
-      console.log("🗑️ جاري حذف العقار...");
-      console.log("🔑 ID:", propertyData.id);
+      console.log("🗑️ إرسال طلب الحذف للخادم...");
       
-      // ✅ التحقق من وجود العقار
-      const docRef = doc(db, "properties", propertyData.id);
-      const docSnap = await getDoc(docRef);
-      
-      if (!docSnap.exists()) {
-        console.error("❌ العقار غير موجود في Firebase!");
-        alert("❌ العقار غير موجود! سيتم إزالته من القائمة.");
-        dispatch({ type: "DELETE_PROPERTY", payload: propertyData.id });
-        return;
-      }
-      
-      // ✅ Soft Delete
-      await updateDoc(docRef, {
-        deleted: true,
-        deletedAt: new Date().toISOString(),
+      const response = await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          collectionName: 'properties',
+          id: propertyData.id,
+        }),
       });
+
+      const result = await response.json();
+      console.log('📊 استجابة الخادم:', result);
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'API Error');
+      }
+
+      console.log('✅ تم حذف العقار!');
       
-      console.log("✅ تم حذف العقار!");
       dispatch({ type: "DELETE_PROPERTY", payload: propertyData.id });
       dispatch({ type: "SHOW_TOAST", payload: { message: "🗑️ تم حذف العقار!", type: "success" } });
 
@@ -57,9 +54,12 @@ export default function DashboardPropertiesPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white">🏠 إدارة العقارات</h1>
-        <Link href="/dashboard/properties/form" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
-          ➕ إضافة عقار
-        </Link>
+        <Link href="/dashboard/properties/form" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">➕ إضافة عقار</Link>
+      </div>
+
+      {/* ✅ شارة API */}
+      <div className="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+        <span className="text-blue-300 text-sm">⚡ Server-Side Delete Mode</span>
       </div>
 
       <div className="mb-4 p-3 bg-slate-800 rounded-lg text-gray-400">
@@ -77,9 +77,6 @@ export default function DashboardPropertiesPage() {
             <div key={p.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
               <PropertyCard property={p} />
               <div className="p-4">
-                <div className="text-xs text-gray-500 mb-2 font-mono bg-slate-900 px-2 py-1 rounded">
-                  🔑 {p.id}
-                </div>
                 <button
                   onClick={() => handleDelete(p)}
                   className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold mt-2"

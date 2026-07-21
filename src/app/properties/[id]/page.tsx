@@ -124,9 +124,12 @@ export default function PropertyDetailPage() {
         read: false,
       });
       
-      // ✅ حفظ الطلب في Firestore
-      await fbAddRequest(inquiryData);
-      console.log("✅ تم حفظ الطلب!");
+            // ✅ حفظ الطلب في Firestore واحفظظ ID الحقيقي!
+      const realRequestId = await fbAddRequest(inquiryData);
+      console.log("✅ تم حفظ الطلب! ID الحقيقي:", realRequestId);
+      
+      // ✅ تحديث inquiryData بالـ ID الحقيقي (مهم جداً!)
+      inquiryData.id = realRequestId;
       
       // ✅✅✅ إضافة/التحقق من العميل في جدول العملاء
       try {
@@ -145,18 +148,18 @@ export default function PropertyDetailPage() {
           
         } else {
           // ❌ العميل غير موجود - إضافة جديد
-        const clientData = {
-  name: inquiryForm.name.trim(),
-  phone: phoneNumber,
-  email: "",
-  city: property.city || "",
-  whatsapp: "",
-  notes: `عميل محتمل - أول اهتمام: ${property.propertyType} في ${property.city} (${inquiryType})`,
-  createdAt: new Date(),
-};
+          const clientData = {
+            name: inquiryForm.name.trim(),
+            phone: phoneNumber,
+            email: "",
+            city: property.city || "",
+            whatsapp: "",
+            notes: `عميل محتمل - أول اهتمام: ${property.propertyType} في ${property.city} (${inquiryType})`,
+            createdAt: new Date(),
+          };
           
           await fbAddClient(clientData);
-          console.log("✅ تم إضافة عميل جديد في جدول العملاء!");
+          console.log("✅ تم إضافة عميل جديد!");
         }
         
       } catch (clientError) {
@@ -164,7 +167,7 @@ export default function PropertyDetailPage() {
         // لا نوقف العملية - الطلب تم حفظه بالفعل
       }
       
-      // ✅ رسالة نجاح
+          // ✅ رسالة نجاح
       dispatch({ 
         type: "SHOW_TOAST", 
         payload: { 
@@ -173,8 +176,10 @@ export default function PropertyDetailPage() {
         }
       });
       
-      // ✅ إغلاق وإعادة تعيين
+      // ✅ إغلاق Modal
       setShowInquiryModal(false);
+      
+      // ✅ إعادة تعيين النموذج
       setInquiryForm({ name: '', phone: '', notes: '' });
       
       // ✅ التوجيه بعد نجاح العملية
