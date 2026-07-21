@@ -167,17 +167,19 @@ export default function PropertyDetailPage() {
         // لا نوقف العملية - الطلب تم حفظه بالفعل
       }
       
-      // ✅ رسالة نجاح
+          // ✅ رسالة نجاح
       dispatch({ 
         type: "SHOW_TOAST", 
         payload: { 
           message: `✅ تم إرسال طلب ${inquiryType}! سنتواصل معك قريباً 📧`,
           type: "success" 
         }
-      );
+      });
       
-      // ✅ إغلاق وإعادة تعيين
+      // ✅ إغلاق Modal
       setShowInquiryModal(false);
+      
+      // ✅ إعادة تعيين النموذج
       setInquiryForm({ name: '', phone: '', notes: '' });
       
       // ✅ التوجيه بعد نجاح العملية
