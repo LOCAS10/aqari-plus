@@ -74,7 +74,7 @@ export default function PropertyCard({
   collectionName: 'properties',
   id: property._firestoreId || property.__realId || property.id,  // ✅✅✅ صححته!
 }),
-        }),
+       
       });
 
       const result = await response.json();
