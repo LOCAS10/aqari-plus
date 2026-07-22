@@ -7,9 +7,9 @@ import PropertyCard from "@/components/PropertyCard";
 export default function DashboardPropertiesPage() {
   const { state, dispatch } = useAppContext();
 
-  // ✅✅✅ حذف عبر Server-Side API
+  // ✅✅✅ حذف عبر Server-Side API (تم إصلاح: إضافة await!)
   const handleDelete = async (propertyData: any) => {
-    if (!propertyData?.id) {
+    if (!propertyData?._firestoreId && !propertyData?.id) {
       alert("❌ لا يوجد ID!");
       return;
     }
@@ -19,19 +19,21 @@ export default function DashboardPropertiesPage() {
     }
 
     try {
-      console.log("🗑️ إرسال طلب الحذف للخادم...");
+      console.log("🗑️ جاري الحذف...");
       
-      const response = await fetch('/api/delete', {
+      // ✅✅✅ تمت إضافة await!
+      const response = await fetch('/api/delete', {  // ← كان ناقصاً await!
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           collectionName: 'properties',
           id: propertyData.id,
+          backupId: propertyData._firestoreId,  // ✅ إضافة backupId
         }),
       });
 
       const result = await response.json();
-      console.log('📊 استجابة الخادم:', result);
+      console.log('📊 النتيجة:', result);
 
       if (!response.ok || result.error) {
         throw new Error(result.error || 'API Error');
@@ -57,9 +59,9 @@ export default function DashboardPropertiesPage() {
         <Link href="/dashboard/properties/form" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">➕ إضافة عقار</Link>
       </div>
 
-      {/* ✅ شارة API */}
+      {/* شارة API */}
       <div className="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
-        <span className="text-blue-300 text-sm">⚡ Server-Side Delete Mode</span>
+        <span className="text-blue-300 text-sm">⡿ Server-Side Delete Mode v5</span>
       </div>
 
       <div className="mb-4 p-3 bg-slate-800 rounded-lg text-gray-400">
@@ -76,12 +78,21 @@ export default function DashboardPropertiesPage() {
           {activeProperties.map((p: any) => (
             <div key={p.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
               <PropertyCard property={p} />
-              <div className="p-4">
+              <div className="p-4 flex gap-2">
+                {/* ✅✅✅ زر تعديل - جديد! */}
+                <Link 
+                  href={`/dashboard/properties/form?id=${p.id}`}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-center transition"
+                >
+                  ✏️ تعديل
+                </Link>
+                
+                {/* زر حذف */}
                 <button
                   onClick={() => handleDelete(p)}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold mt-2"
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition"
                 >
-                  🗑️ حذف العقار
+                  🗑️ حذف
                 </button>
               </div>
             </div>
