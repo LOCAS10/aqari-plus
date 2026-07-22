@@ -1,65 +1,362 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppContext } from "@/contexts/AppContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Header() {
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const { state, dispatch } = useAppContext();
+  const { t, language } = useLanguage();
+  const { state } = useAppContext();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const handleLogout = () => {
-    dispatch({ type: "LOGOUT" });
-  };
+  // تأثير التمرير
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 100);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-emerald-500">
-            <span className="text-3xl">🏢</span>
-            عقاري بلس
+    <header
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: scrolled ? "75px" : "var(--header-height, 95px)",
+        background: "var(--gradient-navy)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        borderBottom: scrolled ? "2px solid var(--gold-primary)" : "2px solid transparent",
+        borderImage: scrolled ? "var(--gradient-gold) 1" : "none",
+        boxShadow: scrolled 
+          ? "0 8px 40px rgba(0,0,0,0.4)" 
+          : "0 4px 30px rgba(0,0,0,0.3)",
+        zIndex: 9999,
+        transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+          padding: "0 40px",
+          height: "100%",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: "100%",
+          }}
+        >
+          {/* ===== الشعار ===== */}
+          <Link
+            href="/"
+            style={{ display: "flex", alignItems: "center", gap: "12px" }}
+            className="group"
+          >
+            <div
+              style={{
+                width: scrolled ? "48px" : "55px",
+                height: scrolled ? "48px" : "55px",
+                background: "var(--gradient-gold)",
+                borderRadius: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: scrolled ? "1.5rem" : "1.8rem",
+                boxShadow: "var(--shadow-gold)",
+                transition: "all 0.3s ease",
+              }}
+              className="animate-glow"
+            >
+              🏢
+            </div>
+            <div>
+              <div
+                style={{
+                  fontSize: scrolled ? "1.3rem" : "1.6rem",
+                  fontWeight: "900",
+                  color: "white",
+                  letterSpacing: "1px",
+                  transition: "font-size 0.3s ease",
+                }}
+              >
+                SOLUTION
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--gold-primary)",
+                  letterSpacing: "2px",
+                  fontWeight: "600",
+                  marginTop: "2px",
+                }}
+              >
+                IMMOBILIER
+              </div>
+            </div>
           </Link>
 
-          <nav className="hidden md:flex gap-8">
-            <Link href="/" className="hover:text-emerald-400 transition">الرئيسية</Link>
-            <Link href="/properties" className="hover:text-emerald-400 transition">العقارات</Link>
-            <Link href="/search" className="hover:text-emerald-400 transition">البحث</Link>
-            <Link href="/requests" className="hover:text-emerald-400 transition">الطلبات</Link>
-            <Link href="/favorites" className="hover:text-emerald-400 transition">المفضلة</Link>
-            <Link href="/archive" className="hover:text-emerald-400 transition">الأرشيف</Link>
+          {/* ===== Desktop Navigation ===== */}
+          <nav style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {/* الرئيسية */}
+            <Link href="/" className="nav-link">
+              {language === "ar" ? "الرئيسية" : "Accueil"}
+            </Link>
+
+            {/* العقارات */}
+            <Link href="/properties" className="nav-link">
+              {language === "ar" ? "العقارات" : "Biens"}
+            </Link>
+
+            {/* ✅❤️ المفضلة */}
+            <Link
+              href="/favorites"
+              className="nav-link"
+              style={{ position: "relative" }}
+              title={language === "ar" ? "المفضلة" : "Favoris"}
+            >
+              ❤️
+              {/* Badge العدادي */}
+              {state.favorites && state.favorites.length > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-6px",
+                    right: "-10px",
+                    background: "#EF4444",
+                    color: "white",
+                    borderRadius: "50%",
+                    width: "22px",
+                    height: "22px",
+                    fontSize: "11px",
+                    fontWeight: "900",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 10px rgba(239, 68, 68, 0.5)",
+                    animation: "pulse 2s infinite",
+                  }}
+                >
+                  {state.favorites.length}
+                </span>
+              )}
+            </Link>
+
+            {/* ✅📦 الأرشيف */}
+            <Link
+              href="/archive"
+              className="nav-link"
+              title={language === "ar" ? "الأرشيف" : "Archive"}
+            >
+              📦
+            </Link>
+
+            {/* زر تسجيل الدخول */}
+            <Link
+              href="/login"
+              className="btn-primary"
+              style={{
+                padding: scrolled ? "10px 24px" : "12px 28px",
+                borderRadius: "30px",
+                fontWeight: "800",
+                fontSize: scrolled ? "0.9rem" : "1rem",
+                background: "var(--gradient-gold)",
+                color: "var(--bg-primary)",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "var(--shadow-gold)",
+              }}
+            >
+              {t.nav?.login || language === "ar" ? "دخول" : "Connexion"}
+            </Link>
+
+            {/* زر اللغة */}
+            <LanguageSwitcher />
           </nav>
 
-          <div className="flex items-center gap-4">
-            {state.currentUser ? (
-              <>
-                <Link href="/dashboard" className="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg transition">لوحة التحكم</Link>
-                <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition">تسجيل الخروج</button>
-              </>
-            ) : (
-              <Link href="/login" className="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg transition">تسجيل الدخول</Link>
-            )}
-
-            <button
-              className="md:hidden text-2xl"
-              onClick={() => setMobileMenu(!mobileMenu)}
-            >
-              {mobileMenu ? "✖" : "☰"}
-            </button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden"
+            style={{
+              padding: "10px",
+              borderRadius: "10px",
+              color: "var(--gold-primary)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1.5rem",
+            }}
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
         </div>
 
-        {mobileMenu && (
-          <nav className="md:hidden pb-4 flex flex-col gap-3">
-            <Link href="/" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>الرئيسية</Link>
-            <Link href="/properties" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>العقارات</Link>
-            <Link href="/search" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>البحث</Link>
-            <Link href="/requests" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>الطلبات</Link>
-            <Link href="/favorites" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>المفضلة</Link>
-            <Link href="/archive" className="hover:text-emerald-400 transition" onClick={() => setMobileMenu(false)}>الأرشيف</Link>
+        {/* ===== Mobile Menu ===== */}
+        {mobileMenuOpen && (
+          <nav
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              paddingBottom: "20px",
+              paddingTop: "20px",
+              marginTop: "15px",
+              borderTop: "1px solid var(--border-color)",
+              animation: "fadeUp 0.3s ease",
+            }}
+          >
+            <Link
+              href="/"
+              style={mobileLinkStyle}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              🏠 {language === "ar" ? "الرئيسية" : "Accueil"}
+            </Link>
+
+            <Link
+              href="/properties"
+              style={mobileLinkStyle}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              🏠 {language === "ar" ? "العقارات" : "Biens"}
+            </Link>
+
+            {/* ✅❤️ المفضلة للموبايل */}
+            <Link
+              href="/favorites"
+              style={mobileLinkStyle}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              ❤️ {language === "ar" ? "المفضلة" : "Favoris"}{" "}
+              ({state.favorites?.length || 0})
+            </Link>
+
+            {/* ✅📦 الأرشيف للموبايل */}
+            <Link
+              href="/archive"
+              style={mobileLinkStyle}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              📦 {language === "ar" ? "الأرشيف" : "Archive"}
+            </Link>
+
+            <Link
+              href="/login"
+              style={mobileLinkStyle}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              🔐 {t.nav?.login || language === "ar" ? "دخول" : "Connexion"}
+            </Link>
+
+            <div style={{ paddingLeft: "16px", paddingTop: "12px" }}>
+              <LanguageSwitcher />
+            </div>
           </nav>
         )}
       </div>
+
+      {/* CSS Styles */}
+      <style jsx>{`
+        .nav-link {
+          padding: 10px 18px;
+          border-radius: 12px;
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: white;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+          text-decoration: none;
+          font-family: var(--font-arabic);
+        }
+
+        .nav-link::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(212, 175, 55, 0.12),
+            transparent
+          );
+          transition: left 0.5s ease;
+        }
+
+        .nav-link:hover::before {
+          left: 100%;
+        }
+
+        .nav-link:hover {
+          background: rgba(212, 175, 55, 0.12);
+          color: #d4af37;
+          transform: translateY(-2px);
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+          }
+        }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes glow {
+          0%,
+          100% {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+          }
+        }
+
+        .animate-glow {
+          animation: glow 3s ease-in-out infinite;
+        }
+      `}</style>
     </header>
   );
 }
+
+// نمط الروابط في الموبايل
+const mobileLinkStyle: React.CSSProperties = {
+  color: "white",
+  padding: "12px 16px",
+  borderRadius: "10px",
+  textDecoration: "none",
+  fontFamily: "var(--font-arabic)",
+  fontWeight: "600",
+  fontSize: "1rem",
+  transition: "all 0.2s ease",
+};
