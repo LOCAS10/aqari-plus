@@ -1,26 +1,178 @@
 "use client";
 
 import { useApp } from "@/contexts/AppContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import PropertyCard from "@/components/PropertyCard";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function ArchivePage() {
   const { state } = useApp();
-  const archived = state.properties.filter(
-    (p) => p.status === "تم البيع" || p.status === "تم الكراء"
-  );
+  const { language } = useLanguage();
+  const [filter, setFilter] = useState("الكل");
+  
+  // ✅✅✅ مصحح - استخدام any لتجنب Type Error
+  const allArchived = state.properties.filter((p: any) => {
+    const status = p.status;
+    // عرض كل شيء ما عدا "متوفر"
+    return status && status !== "متوفر";
+  });
+  
+  // تطبيق الفلتر
+  const archived = filter === "الكل" 
+    ? allArchived 
+    : allArchived.filter((p: any) => p.status === filter);
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">الأرشيف</h1>
-      {archived.length === 0 ? (
-        <div className="text-center text-gray-400 text-xl">لا توجد عقارات في الأرشيف</div>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {archived.map((p) => (
-            <PropertyCard key={p.id} property={p} />
+    <div className="min-h-screen" style={{ 
+      background: 'var(--bg-primary)',
+      paddingTop: 'calc(var(--header-height, 95px) + 40px)',
+      paddingBottom: '60px'
+    }}>
+      
+      <div className="max-w-7xl mx-auto px-4">
+        
+        {/* Header */}
+        <div className="text-center mb-12">
+          <span className="inline-block px-6 py-2 rounded-full text-sm font-bold mb-6" style={{
+            background: 'rgba(212, 175, 55, 0.15)',
+            color: 'var(--gold-light)',
+            border: '1px solid rgba(212, 175, 55, 0.3)'
+          }}>
+            📦 {language === 'ar' ? 'سجل العقارات' : 'Historique des Biens'}
+          </span>
+          
+          <h1 style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+            fontWeight: '900',
+            lineHeight: '1.15',
+            marginBottom: '20px',
+            background: 'linear-gradient(135deg, #D4AF37 0%, #E5C76B 30%, #FFFFFF 50%, #E5C76B 70%, #D4AF37 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            {language === 'ar' ? 'الأرشيف' : 'Archive'}
+          </h1>
+          
+          <div className="w-32 h-1 mx-auto mb-8" style={{ background: 'var(--gradient-gold)', borderRadius: '2px' }}></div>
+          
+          <p style={{ color: 'var(--muted)', fontSize: '1.1rem', lineHeight: '1.9', maxWidth: '600px', margin: '0 auto' }}>
+            {language === 'ar' ? 'العقارات التي تم بيعها أو تأجيرها بنجاح ✓' : 'Biens vendus ou loués avec succès ✓'}
+          </p>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex justify-center gap-4 mb-14 flex-wrap">
+          {[
+            { key: "الكل", label: language === 'ar' ? 'الكل' : 'Tous', icon: '📋', count: allArchived.length },
+            { key: "تم البيع", label: language === 'ar' ? 'مباع' : 'Vendus', icon: '💰', count: allArchived.filter((p: any) => p.status === "تم البيع").length },
+            { key: "تم الكراء", label: language === 'ar' ? 'مؤجر' : 'Loués', icon: '🔑', count: allArchived.filter((p: any) => p.status === "تم الكراء").length },
+            { key: "محجوز", label: language === 'ar' ? 'محجوز' : 'Réservé', icon: '🔒', count: allArchived.filter((p: any) => p.status === "محجوز").length }
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              style={{
+                padding: '12px 28px',
+                borderRadius: '25px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                transition: 'all 0.3s ease',
+                border: '2px solid',
+                cursor: 'pointer',
+                background: filter === f.key ? 'var(--gradient-gold)' : 'transparent',
+                color: filter === f.key ? 'var(--bg-primary)' : 'var(--gold-primary)',
+                borderColor: filter === f.key ? 'var(--gold-primary)' : 'rgba(212, 175, 55, 0.3)',
+                boxShadow: filter === f.key ? '0 4px 20px rgba(212, 175, 55, 0.3)' : 'none',
+                transform: filter === f.key ? 'translateY(-2px)' : 'translateY(0)'
+              }}
+            >
+              <span className="mr-2">{f.icon}</span>
+              {f.label}
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold" style={{
+                background: filter === f.key ? 'rgba(10, 22, 40, 0.2)' : 'rgba(212, 175, 55, 0.15)',
+                fontSize: '0.75rem'
+              }}>
+                {f.count}
+              </span>
+            </button>
           ))}
         </div>
-      )}
+
+        {/* حالة فارغة */}
+        {archived.length === 0 ? (
+          <div className="text-center py-24">
+            <div style={{ fontSize: '7rem', marginBottom: '30px', opacity: 0.3 }}>📭</div>
+            
+            <h2 className="text-3xl font-bold mb-5" style={{ color: 'var(--muted)' }}>
+              {language === 'ar' ? 'الأرشيف فارغ' : 'Archive Vide'}
+            </h2>
+            
+            <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: 'var(--muted)', lineHeight: '2' }}>
+              {language === 'ar' ? 'لا توجد عقارات مؤرشفة حالياً.' : "Aucun bien archivé pour le moment."}
+            </p>
+            
+            <Link href="/properties" className="btn-primary inline-flex items-center gap-3" style={{
+              padding: '16px 40px', borderRadius: '30px', fontSize: '1.05rem', fontWeight: '800'
+            }}>
+              🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens'} ←
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-10 px-2">
+              <p style={{ color: 'var(--muted)', fontSize: '0.95rem' }}>
+                {language === 'ar' ? 'عرض' : 'Affichage de'} 
+                <span className="font-bold text-lg mx-2" style={{ color: 'var(--gold-primary)' }}>{archived.length}</span> 
+                {language === 'ar' ? 'عقار مؤرشف' : 'bien(s) archivé(s)'}
+              </p>
+              
+              <div className="hidden md:flex gap-6 text-sm" style={{ color: 'var(--muted)' }}>
+                <span>💰 {allArchived.filter((p: any) => p.status === "تم البيع").length} مباع</span>
+                <span>🔑 {allArchived.filter((p: any) => p.status === "تم الكراء").length} مؤجر</span>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {archived.map((property: any) => (
+                <div key={property.id} style={{ position: 'relative', opacity: '0.85', filter: 'grayscale(20%)' }}>
+                  <PropertyCard property={property} />
+                  
+                  <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                    <span className="px-4 py-2 rounded-full text-xs font-bold shadow-lg" style={{
+                      background: 'linear-gradient(135deg, #6B7280, #9CA3AF)', color: 'white'
+                    }}>
+                      ✓ {property.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-16 pt-10 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+              <p style={{ color: 'var(--muted)', fontSize: '1rem' }}>
+                {language === 'ar' ? '💡 هل تبحث عن عقار مشابه؟' : '💡 Vous cherchez un bien similaire?'}
+              </p>
+              
+              <Link href="/properties" className="btn-secondary inline-flex items-center gap-2 mt-4" style={{
+                padding: '14px 32px', borderRadius: '25px', fontSize: '0.95rem', fontWeight: '700'
+              }}>
+                🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
+              </Link>
+            </div>
+          </>
+        )}
+
+      </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+        }
+        button:hover { transform: translateY(-3px); }
+      `}</style>
+
     </div>
   );
 }
