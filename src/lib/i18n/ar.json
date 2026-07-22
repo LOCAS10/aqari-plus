@@ -1,0 +1,27 @@
+{
+  "appName": "حلول عقارية",
+  "appSubtitle": "SOLUTION Immobilier",
+  "nav": {
+    "home": "الرئيسية",
+    "properties": "🏠 العقارات",
+    "clients": "👥 العملاء",
+    "requests": "📋 الطلبات",
+    "dashboard": "⚙️ لوحة التحكم"
+  },
+  "properties": {
+    "title": "العقارات المتاحة",
+    "add": "➕ إضافة عقار",
+    "edit": "✏️ تعديل",
+    "delete": "🗑️ حذف",
+    "share": "📤 مشاركة",
+    "whatsapp": "💬 واتساب",
+    "noProperties": "لا توجد عقارات"
+  },
+  "clients": { "title": "إدارة العملاء", "add": "➕ إضافة عميل", "noClients": "لا يوجد عملاء" },
+  "requests": { "title": "إدارة الطلبات", "noRequests": "لا توجد طلبات" },
+  "dashboard": { "title": "لوحة التحكم" },
+  "common": {
+    "loading": "جاري التحميل...", "save": "حفظ", "cancel": "إلغاء",
+    "success": "تم بنجاح!", "error": "حدث خطأ", "yes": "نعم", "no": "لا"
+  }
+}

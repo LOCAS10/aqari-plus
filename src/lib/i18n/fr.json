@@ -1,0 +1,27 @@
+{
+  "appName": "SOLUTION Immobilier",
+  "appSubtitle": "حلول عقارية",
+  "nav": {
+    "home": "Accueil",
+    "properties": "🏠 Biens",
+    "clients": "👥 Clients",
+    "requests": "📋 Demandes",
+    "dashboard": "⚙️ Tableau de bord"
+  },
+  "properties": {
+    "title": "Biens Disponibles",
+    "add": "➕ Ajouter un Bien",
+    "edit": "✏️ Modifier",
+    "delete": "🗑️ Supprimer",
+    "share": "📤 Partager",
+    "whatsapp": "💬 WhatsApp",
+    "noProperties": "Aucun bien"
+  },
+  "clients": { "title": "Gestion des Clients", "add": "➕ Ajouter Client", "noClients": "Aucun client" },
+  "requests": { "title": "Gestion des Demandes", "noRequests": "Aucune demande" },
+  "dashboard": { "title": "Tableau de bord" },
+  "common": {
+    "loading": "Chargement...", "save": "Enregistrer", "cancel": "Annuler",
+    "success": "Succès!", "error": "Erreur", "yes": "Oui", "no": "Non"
+  }
+}

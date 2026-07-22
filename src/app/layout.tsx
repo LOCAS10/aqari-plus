@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
 import "./globals.css";
-import Providers from "@/components/Providers";
-import Header from "@/components/Header";
-import Toast from "@/components/Toast";
-
-const cairo = Cairo({
-  subsets: ["arabic"],
-  weight: ["400", "600", "700"],
-});
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const metadata: Metadata = {
-  title: "عقاري بلس",
-  description: "منصة عقارية احترافية للبيع والكراء والرهن",
+  title: "SOLUTION Immobilier | حلول عقارية",
+  description: "وكالة عقارية - Casablanca Maroc",
+  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({
@@ -21,22 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="h-full">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-        />
-      </head>
-      <body className={`${cairo.className} min-h-full flex flex-col`}>
-        <Providers>
-          <Header />
-          <Toast />
-          <main className="flex-1">{children}</main>
-        </Providers>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className="bg-slate-900 text-white antialiased">
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
