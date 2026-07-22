@@ -10,8 +10,8 @@ export default function PropertiesPage() {
 
   // ✅✅✅ تصفية العقارات: إخفاء المحذوفة + تطبيق الفلتر
   const filtered = state.properties.filter((p) => {
-    // 🔒 إخفاء العقارات المحذوفة (Soft Delete)
-    if (p.deleted) return false;
+    // 🔒 إخفاء العقارات المحذوفة (Soft Delete) - مع Type Safety
+    if ((p as any).deleted) return false;
     
     // تطبيق فلاتر العرض
     if (filter === "الكل") return p.status === "متوفر";
