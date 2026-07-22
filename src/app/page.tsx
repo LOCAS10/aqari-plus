@@ -20,76 +20,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
       
-      {/* ===== HEADER ===== */}
-      <header className={`transition-all duration-300 ${scrolled ? 'scrolled' : ''}`} style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 'var(--header-height)',
-        background: 'var(--gradient-navy)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '2px solid transparent',
-        borderImage: 'var(--gradient-gold) 1',
-        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)',
-        zIndex: 9999
-      }}>
-        <div className="max-w-7xl mx-auto px-4 h-full">
-          <div className="flex items-center justify-between h-full">
-            
-            {/* الشعار */}
-            <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition group">
-              <div style={{
-                width: '55px',
-                height: '55px',
-                background: 'var(--gradient-gold)',
-                borderRadius: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.8rem',
-                boxShadow: 'var(--shadow-gold)'
-              }}>
-                🏢
-              </div>
-              <div>
-                <h1 className="text-xl font-black leading-tight" style={{ 
-                  color: 'white', 
-                  letterSpacing: '1px'
-                }}>SOLUTION</h1>
-                <p className="text-xs font-semibold tracking-widest" style={{ 
-                  color: 'var(--gold-primary)', marginTop: '2px' }}>IMMOBILIER</p>
-              </div>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-2">
-              <Link href="/" className="nav-link">{t.nav.home}</Link>
-              <Link href="/properties" className="nav-link">{t.nav.properties}</Link>
-              <Link href="/login" className="btn-primary" style={{
-                padding: '12px 28px', borderRadius: '30px', fontWeight: '800'
-              }}>{t.nav.login}</Link>
-              <LanguageSwitcher />
-            </nav>
-
-            {/* Mobile Menu Button */}
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-3 rounded-xl transition" style={{ color: 'var(--gold-primary)' }}>
-              <span className="text-2xl">{mobileMenuOpen ? '✕' : '☰'}</span>
-            </button>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <nav className="md:hidden pb-6 border-t animate-fade-up" style={{ borderColor: 'var(--border-color)', paddingTop: '20px', marginTop: '15px' }}>
-              <Link href="/" className="block py-3 px-4 rounded-lg mb-2 hover-lift" style={{ color: 'white' }}>{t.nav.home}</Link>
-              <Link href="/properties" className="block py-3 px-4 rounded-lg mb-2 hover-lift" style={{ color: 'white' }}>{t.nav.properties}</Link>
-              <Link href="/login" className="block py-3 px-4 rounded-lg mb-4 hover-lift" style={{ color: 'white' }}>{t.nav.login}</Link>
-              <div className="px-4"><LanguageSwitcher /></div>
-            </nav>
-          )}
-        </div>
-      </header>
+     
 
       {/* ===== HERO SECTION (✅ مع صورة خلفية + عناصر متحركة) ===== */}
 <section style={{
