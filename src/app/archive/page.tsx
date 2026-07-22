@@ -3,19 +3,20 @@
 import { useApp } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PropertyCard from "@/components/PropertyCard";
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
+
 export default function ArchivePage() {
   const { state } = useApp();
   const { language } = useLanguage();
   const [filter, setFilter] = useState("الكل");
   
-  // ✅ جلب العقارات المؤرشفة (غير المتاحة)
+  // جلب العقارات المؤرشفة
   const allArchived = state.properties.filter(
     (p) => p.status === "تم البيع" || p.status === "تم الكراء" || p.status === "تم الرهن" || p.status !== "متوفر"
   );
   
-  // ✅ تطبيق الفلتر
+  // تطبيق الفلتر
   const archived = filter === "الكل" 
     ? allArchived 
     : allArchived.filter(p => p.status === filter);
@@ -29,10 +30,8 @@ export default function ArchivePage() {
       
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* ===== Header Section (متدرج ذهبي) ===== */}
+        {/* Header */}
         <div className="text-center mb-12">
-          
-          {/* Badge */}
           <span className="inline-block px-6 py-2 rounded-full text-sm font-bold mb-6" style={{
             background: 'rgba(212, 175, 55, 0.15)',
             color: 'var(--gold-light)',
@@ -41,7 +40,6 @@ export default function ArchivePage() {
             📦 {language === 'ar' ? 'سجل العقارات' : 'Historique des Biens'}
           </span>
           
-          {/* ✅ العنوان المتدرج */}
           <h1 style={{
             fontSize: 'clamp(2.5rem, 5vw, 4rem)',
             fontWeight: '900',
@@ -56,13 +54,11 @@ export default function ArchivePage() {
             {language === 'ar' ? 'الأرشيف' : 'Archive'}
           </h1>
           
-          {/* خط ذهبي */}
           <div className="w-32 h-1 mx-auto mb-8" style={{ 
             background: 'var(--gradient-gold)', 
             borderRadius: '2px' 
           }}></div>
           
-          {/* وصف */}
           <p style={{ 
             color: 'var(--muted)', 
             fontSize: '1.1rem',
@@ -76,7 +72,7 @@ export default function ArchivePage() {
           </p>
         </div>
 
-        {/* ===== ✅ Filter Buttons (فلتر الحالات) ===== */}
+        {/* Filter Buttons */}
         <div className="flex justify-center gap-4 mb-14 flex-wrap">
           {[
             { key: "الكل", label: language === 'ar' ? 'الكل' : 'Tous', icon: '📋', count: allArchived.length },
@@ -105,8 +101,6 @@ export default function ArchivePage() {
             >
               <span className="mr-2">{f.icon}</span>
               {f.label}
-              
-              {/* عداد */}
               <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold" style={{
                 background: filter === f.key ? 'rgba(10, 22, 40, 0.2)' : 'rgba(212, 175, 55, 0.15)',
                 fontSize: '0.75rem'
@@ -117,16 +111,13 @@ export default function ArchivePage() {
           ))}
         </div>
 
-        {/* ===== حالة فارغة ===== */}
+        {/* حالة فارغة */}
         {archived.length === 0 ? (
-          <div className="text-center py-24 scroll-animate">
-            
-            {/* أيقونة */}
+          <div className="text-center py-24">
             <div style={{
               fontSize: '7rem',
               marginBottom: '30px',
               opacity: 0.3,
-              animation: 'float 6s ease-in-out infinite',
               display: 'inline-block'
             }}>📭</div>
             
@@ -139,24 +130,23 @@ export default function ArchivePage() {
               lineHeight: '2' 
             }}>
               {language === 'ar' 
-                ? 'لا توجد عقارات مؤرشفة حالياً. العقارات المباعة أو المؤجرة ستظهر هنا تلقائياً!'
-                : "Aucun bien archivé pour le moment. Les biens vendus ou loués apparaîtront ici automatiquement!"}
+                ? 'لا توجد عقارات مؤرشفة حالياً.'
+                : "Aucun bien archivé pour le moment."}
             </p>
             
-            {/* زر العودة للعقارات المتاحة */}
-         // ✅ صحيح (يستخدم <Link>)
-<Link 
-  href="/properties"
-  className="btn-primary inline-flex items-center gap-3"
-  style={{
-    padding: '16px 40px',
-    borderRadius: '30px',
-    fontSize: '1.05rem',
-    fontWeight: '800'
-  }}
->
-  🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens Disponibles'} ←
-</Link>
+            {/* ✅ استخدام Link بدلاً من a */}
+            <Link 
+              href="/properties"
+              className="btn-primary inline-flex items-center gap-3"
+              style={{
+                padding: '16px 40px',
+                borderRadius: '30px',
+                fontSize: '1.05rem',
+                fontWeight: '800'
+              }}
+            >
+              🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens Disponibles'} ←
+            </Link>
           </div>
         ) : (
           <>
@@ -173,82 +163,71 @@ export default function ArchivePage() {
                 )}
               </p>
               
-              {/* إحصائية سريعة */}
               <div className="hidden md:flex gap-6 text-sm" style={{ color: 'var(--muted)' }}>
                 <span>💰 {allArchived.filter(p => p.status === "تم البيع").length} مباع</span>
                 <span>🔑 {allArchived.filter(p => p.status === "تم الكراء").length} مؤجر</span>
               </div>
             </div>
 
-            {/* ===== Grid المحسن (البطاقات شاحبة قليلاً = مؤرشفة) ===== */}
+            {/* Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
               {archived.map((property, index) => (
                 <div 
                   key={property.id}
-                  className="scroll-animate archived-card-wrapper"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  {/* ✅ غلاف شفاف على البطاقة */}
-                  <div style={{
+                  style={{
                     position: 'relative',
                     opacity: '0.85',
-                    filter: 'grayscale(20%)'  // ← رمادي خفيف
-                  }}>
-                    <PropertyCard property={property} />
-                    
-                    {/* ✅ شارة "مؤرشف" فوق البطاقة */}
-                    <div className="absolute top-4 right-4 z-20 pointer-events-none">
-                      <span className="px-4 py-2 rounded-full text-xs font-bold shadow-lg" style={{
-                        background: 'linear-gradient(135deg, #6B7280, #9CA3AF)',
-                        color: 'white',
-                        backdropFilter: 'blur(10px)'
-                      }}>
-                        ✓ {property.status}
-                      </span>
-                    </div>
+                    filter: 'grayscale(20%)'
+                  }}
+                >
+                  <PropertyCard property={property} />
+                  
+                  {/* شارة الحالة */}
+                  <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                    <span className="px-4 py-2 rounded-full text-xs font-bold shadow-lg" style={{
+                      background: 'linear-gradient(135deg, #6B7280, #9CA3AF)',
+                      color: 'white',
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      ✓ {property.status}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* رسالة في الأسفل */}
+            {/* رسالة أسفل */}
             <div className="text-center mt-16 pt-10 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
               <p style={{ color: 'var(--muted)', fontSize: '1rem' }}>
                 {language === 'ar' 
-                  ? '💡 هل تبحث عن عقار مشابه؟ تصفح عقاراتنا المتاحة!'
-                  : '💡 Vous cherchez un bien similaire? Consultez nos biens disponibles!'}
+                  ? '💡 هل تبحث عن عقار مشابه؟'
+                  : '💡 Vous cherchez un bien similaire?'}
               </p>
               
-          // ✅ صحيح
-<Link 
-  href="/properties"
-  className="btn-secondary inline-flex items-center gap-2"
-  style={{
-    padding: '14px 32px',
-    borderRadius: '25px',
-    fontSize: '0.95rem',
-    fontWeight: '700'
-  }}
->
-  🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
-</Link>
+              {/* ✅ Link هنا أيضاً */}
+              <Link 
+                href="/properties"
+                className="btn-secondary inline-flex items-center gap-2 mt-4"
+                style={{
+                  padding: '14px 32px',
+                  borderRadius: '25px',
+                  fontSize: '0.95rem',
+                  fontWeight: '700'
+                }}
+              >
+                🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
+              </Link>
             </div>
           </>
         )}
 
       </div>
 
-      {/* CSS Animations */}
+      {/* CSS */}
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-15px); }
-        }
-        
-        .archived-card-wrapper:hover {
-          opacity: 1 !important;
-          filter: grayscale(0%) !important;
-          transition: all 0.5s ease;
         }
         
         button:hover {
