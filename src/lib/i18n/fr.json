@@ -43,11 +43,9 @@
     "logout": "Déconnexion",
     "email": "Email",
     "password": "Mot de passe",
-    "loginButton": "Se connecter"
-  },
-  "whatsapp": {
-    "success": "Partagé avec succès!",
-    "error": "Échec du partage"
+    "loginButton": "Se connecter",
+    "adminTitle": "Admin uniquement",
+    "userTitle": "Employé"
   },
   "common": {
     "loading": "Chargement...",

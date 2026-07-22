@@ -43,11 +43,9 @@
     "logout": "تسجيل الخروج",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "loginButton": "دخول"
-  },
-  "whatsapp": {
-    "success": "تمت المشاركة!",
-    "error": "فشل المشاركة"
+    "loginButton": "دخول",
+    "adminTitle": "مدير فقط",
+    "userTitle": "موظف"
   },
   "common": {
     "loading": "جاري التحميل...",
