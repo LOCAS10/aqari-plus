@@ -6,22 +6,57 @@
     "properties": "🏠 العقارات",
     "clients": "👥 العملاء",
     "requests": "📋 الطلبات",
-    "dashboard": "⚙️ لوحة التحكم"
+    "dashboard": "⚙️ لوحة التحكم",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج"
   },
   "properties": {
     "title": "العقارات المتاحة",
     "add": "➕ إضافة عقار",
     "edit": "✏️ تعديل",
     "delete": "🗑️ حذف",
+    "details": "التفاصيل",
+    "price": "السعر",
+    "area": "المساحة",
+    "rooms": "الغرف",
+    "city": "المدينة",
+    "district": "الحي",
+    "available": "متوفر",
+    "reserved": "محجوز",
+    "sold": "تم البيع",
+    "sale": "بيع",
+    "rent": "كراء",
+    "mortgage": "رهن",
     "share": "📤 مشاركة",
     "whatsapp": "💬 واتساب",
-    "noProperties": "لا توجد عقارات"
+    "inquiry": "📩 استفسار",
+    "negotiable": "قابل للتفاوض",
+    "featured": "⭐ مميز",
+    "noProperties": "لا توجد عقارات",
+    "perMonth": "/ شهر"
   },
   "clients": { "title": "إدارة العملاء", "add": "➕ إضافة عميل", "noClients": "لا يوجد عملاء" },
   "requests": { "title": "إدارة الطلبات", "noRequests": "لا توجد طلبات" },
   "dashboard": { "title": "لوحة التحكم" },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "loginButton": "دخول"
+  },
+  "whatsapp": {
+    "success": "تمت المشاركة!",
+    "error": "فشل المشاركة"
+  },
   "common": {
-    "loading": "جاري التحميل...", "save": "حفظ", "cancel": "إلغاء",
-    "success": "تم بنجاح!", "error": "حدث خطأ", "yes": "نعم", "no": "لا"
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "success": "تم بنجاح!",
+    "error": "حدث خطأ",
+    "yes": "نعم",
+    "no": "لا",
+    "copy": "نسخ الرابط"
   }
 }

@@ -6,22 +6,57 @@
     "properties": "🏠 Biens",
     "clients": "👥 Clients",
     "requests": "📋 Demandes",
-    "dashboard": "⚙️ Tableau de bord"
+    "dashboard": "⚙️ Tableau de bord",
+    "login": "Connexion",
+    "logout": "Déconnexion"
   },
   "properties": {
     "title": "Biens Disponibles",
     "add": "➕ Ajouter un Bien",
     "edit": "✏️ Modifier",
     "delete": "🗑️ Supprimer",
+    "details": "Détails",
+    "price": "Prix",
+    "area": "Surface",
+    "rooms": "Pièces",
+    "city": "Ville",
+    "district": "Quartier",
+    "available": "Disponible",
+    "reserved": "Réservé",
+    "sold": "Vendu",
+    "sale": "À Vendre",
+    "rent": "À Louer",
+    "mortgage": "Hypothèque",
     "share": "📤 Partager",
     "whatsapp": "💬 WhatsApp",
-    "noProperties": "Aucun bien"
+    "inquiry": "📩 Intéressé(e)",
+    "negotiable": "Négociable",
+    "featured": "⭐ En vedette",
+    "noProperties": "Aucun bien",
+    "perMonth": "/ mois"
   },
   "clients": { "title": "Gestion des Clients", "add": "➕ Ajouter Client", "noClients": "Aucun client" },
   "requests": { "title": "Gestion des Demandes", "noRequests": "Aucune demande" },
   "dashboard": { "title": "Tableau de bord" },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "loginButton": "Se connecter"
+  },
+  "whatsapp": {
+    "success": "Partagé avec succès!",
+    "error": "Échec du partage"
+  },
   "common": {
-    "loading": "Chargement...", "save": "Enregistrer", "cancel": "Annuler",
-    "success": "Succès!", "error": "Erreur", "yes": "Oui", "no": "Non"
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "success": "Succès!",
+    "error": "Erreur",
+    "yes": "Oui",
+    "no": "Non",
+    "copy": "Copier le lien"
   }
 }
