@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AppProvider } from "@/contexts/AppContext";
 
 export const metadata: Metadata = {
   title: "SOLUTION Immobilier | حلول عقارية",
   description: "وكالة عقارية - Casablanca Maroc",
-  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({
@@ -17,7 +17,9 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="bg-slate-900 text-white antialiased">
         <LanguageProvider>
-          {children}
+          <AppProvider>
+            {children}
+          </AppProvider>
         </LanguageProvider>
       </body>
     </html>
