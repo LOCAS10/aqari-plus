@@ -5,6 +5,7 @@ import { Property } from "@/lib/types";
 import { useAppContext } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+// ===== تنسيق السعر =====
 export const formatPrice = (n: number) => {
   if (n >= 1000000) return `${(n / 1000000).toFixed(2)} مليون`;
   if (n >= 1000) return `${(n / 1000).toFixed(0)} ألف`;
@@ -36,20 +37,34 @@ export default function PropertyCard({
     dispatch({ type: "TOGGLE_FAV", payload: property.id });
   };
 
-  // ===== واتساب =====
+  // ===== ✅✅✅ واتساب - مصحح بالرقم الصحيح =====
   const openWhatsapp = () => {
-    const number = property.ownerWhatsapp || property.ownerPhone;
-    if (number) window.open(`https://wa.me/212${number.replace(/^0/, '')}`, '_blank');
+    // ✅ استخدام الرقم الثابت الصحيح
+    const whatsappNumber = "212607633144";
+    
+    // رسالة مخصصة
+    const message = language === 'ar' 
+      ? `مرحباً، أنا مهتم بهذا العقار:\n🏠 ${property.propertyType} ${property.operation} - ${property.city}\n💰 ${displayPrice(property, t)}\n\nمن موقع SOLUTION Immobilier`
+      : `Bonjour, je suis intéressé par ce bien:\n🏠 ${property.propertyType} ${property.operation} - ${property.city}\n💰 ${displayPrice(property, t)}\n\nDepuis SOLUTION Immobilier`;
+    
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   // ===== هاتف =====
   const callPhone = () => {
-    if (property.ownerPhone) window.open(`tel:${property.ownerPhone}`, '_self');
+    const phone = property.ownerPhone || "0607633144"; // ✅ رقم احتياطي
+    window.open(`tel:${phone}`, '_self');
   };
 
-  // ===== 🆕🆕🆕 مشاركة عبر واتساب =====
+  // ===== ✅✅✅ مشاركة عبر واتساب - مصححة =====
   const shareToWhatsApp = () => {
-    const link = `https://solution-immobilier.vercel.app/properties/${property.id}`;
+    const link = typeof window !== 'undefined' 
+      ? `${window.location.origin}/properties/${property.id}`
+      : `https://solution-immobilier.vercel.app/properties/${property.id}`;
+    
+    // ✅ الرقم الصحيح
+    const whatsappNumber = "212607633144";
     
     let message: string;
     
@@ -94,12 +109,16 @@ https://web.facebook.com/SOLUTION.ImmobilierS
     }
 
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+    // ✅ إضافة الرقم هنا (كان ناقصاً!)
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank', 'noopener,noreferrer');
   };
 
   // ===== نسخ الرابط =====
   const copyLink = () => {
-    const link = `https://solution-immobilier.vercel.app/properties/${property.id}`;
+    const link = typeof window !== 'undefined' 
+      ? `${window.location.origin}/properties/${property.id}`
+      : `https://solution-immobilier.vercel.app/properties/${property.id}`;
+      
     navigator.clipboard.writeText(link).then(() => {
       dispatch({ type: "SHOW_TOAST", payload: { message: language === 'ar' ? '✅ تم نسخ الرابط!' : '✅ Lien copié!', type: "success" }});
     });
@@ -132,47 +151,161 @@ https://web.facebook.com/SOLUTION.ImmobilierS
   };
 
   return (
-    <div className="bg-slate-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+    // ✅ بطاقة محسنة مع تصميم ذهبي
+    <div className="property-card-enhanced" style={{
+      background: 'linear-gradient(145deg, var(--bg-card), #162033)',
+      border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-lg)',
+      overflow: 'hidden',
+      transition: 'all var(--transition-slow)',
+      position: 'relative'
+    }}>
+      {/* ✅ شريط ذهبي علوي (يظهر عند Hover) */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+        background: 'var(--gradient-gold)',
+        transform: 'scaleX(0)',
+        transition: 'transform var(--transition-normal)',
+        zIndex: 10
+      }} className="gold-bar"></div>
+      
       {/* صورة */}
-      <div className="relative">
-        <img src={property.images[0]} alt={property.propertyType} className="w-full h-56 object-cover" />
+      <div className="relative overflow-hidden" style={{ height: '240px' }}>
+        <img 
+          src={property.images[0]} 
+          alt={property.propertyType} 
+          className="w-full h-full object-cover"
+          style={{ transition: 'transform 0.6s ease' }}
+        />
         
-        <button onClick={handleFav} className="absolute top-3 right-3 bg-white/90 p-2 rounded-full hover:scale-110 transition">
-          <span className={`text-2xl ${isFav ? "text-red-500" : "text-gray-500"}`}>{isFav ? "❤️" : "🤍"}</span>
+        {/* ✅ زر المفضلة محسن */}
+        <button 
+          onClick={handleFav} 
+          className="absolute top-3 right-3 p-2.5 rounded-full transition-all hover:scale-110"
+          style={{
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <span className={`text-xl ${isFav ? "text-red-500" : "text-gray-400"}`}>
+            {isFav ? "❤️" : "🤍"}
+          </span>
         </button>
         
+        {/* ✅ Badges محسنة */}
         <div className="absolute top-3 left-3 flex gap-2">
-          <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm">{property.operation}</span>
-          <span className={`${property.status === "متوفر" ? "bg-green-500" : "bg-yellow-500"} text-white px-3 py-1 rounded-full text-sm`}>
+          <span className="badge-success px-3 py-1.5 rounded-full text-xs font-bold" style={{
+            background: 'linear-gradient(135deg, #D4AF37, #E5C76B)',
+            color: '#0A1628',
+            boxShadow: 'var(--shadow-gold)'
+          }}>
+            {property.operation}
+          </span>
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+            property.status === "متوفر" 
+              ? "text-white" 
+              : "text-white"
+          }`} style={{
+            background: property.status === "متوفر" ? '#25D366' : '#F59E0B',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+          }}>
             {property.status}
           </span>
         </div>
         
-        <div className="absolute bottom-3 left-3 bg-black/70 text-white px-3 py-1 rounded-full text-sm">#{property.id}</div>
+        {/* ✅ ID Badge */}
+        <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-bold" style={{
+          background: 'rgba(0,0,0,0.75)',
+          color: 'var(--gold-primary)',
+          backdropFilter: 'blur(5px)'
+        }}>
+          #{property.id}
+        </div>
       </div>
 
       {/* معلومات */}
-      <div className="p-4 text-white">
-        <div className="text-lg font-bold mb-2">
+      <div className="p-5" style={{ color: 'white' }}>
+        
+        {/* ✅ العنوان */}
+        <h3 className="text-lg font-bold mb-3 leading-tight" style={{ lineHeight: '1.4' }}>
           {property.propertyType} {language === 'fr' ? 'à' : 'في'} {property.city} - {property.district}
+        </h3>
+        
+        {/* ✅ المواصفات */}
+        <div className="flex gap-4 mb-4 flex-wrap text-sm" style={{ color: 'var(--muted)' }}>
+          <span className="flex items-center gap-1">
+            <span style={{ color: 'var(--gold-primary)' }}>📐</span> 
+            {property.area} م²
+          </span>
+          <span className="flex items-center gap-1">
+            <span style={{ color: 'var(--gold-primary)' }}>🛏️</span> 
+            {property.rooms}
+          </span>
+          {property.bathrooms > 0 && (
+            <span className="flex items-center gap-1">
+              <span style={{ color: 'var(--gold-primary)' }}>🚿</span> 
+              {property.bathrooms}
+            </span>
+          )}
         </div>
         
-        <div className="text-sm text-gray-400 mb-3 flex gap-3 flex-wrap">
-          <span>📐 {property.area} م²</span>
-          <span>🛏️ {property.rooms}</span>
-          {property.bathrooms > 0 && <span>🚿 {property.bathrooms}</span>}
+        {/* ✅ السعر بتدرج ذهبي */}
+        <div className="text-2xl font-black mb-5 pb-4 border-b" style={{
+          background: 'linear-gradient(135deg, #D4AF37, #E5C76B, #FFFFFF)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          borderColor: 'var(--border-subtle)'
+        }}>
+          {displayPrice(property, t)}
         </div>
-        
-        <div className="text-xl font-bold text-amber-500 mb-4">{displayPrice(property, t)}</div>
 
         {/* معلومات صاحب العقار (للمدير) */}
         {isAdmin && property.ownerName && (
-          <div className="mb-4 p-3 rounded-lg border-2 border-dashed border-amber-400" style={{background: 'linear-gradient(135deg, #451a03 0%, #78350f 100%)'}}>
-            <span className="text-xs font-bold bg-red-600 text-white px-2 py-1 rounded-full">🔒 {t.auth?.adminTitle || 'خاص'}</span>
-            <p className="text-amber-200 font-semibold mt-2">👤 {property.ownerName}</p>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {property.ownerPhone && (<button onClick={callPhone} className="px-3 py-1.5 bg-blue-600 rounded-md text-sm">☎️ {property.ownerPhone}</button>)}
-              {(property.ownerWhatsapp || property.ownerPhone) && (<button onClick={openWhatsapp} className="px-3 py-1.5 bg-green-600 rounded-md text-sm">💬 واتساب</button>)}
+          <div className="mb-4 p-4 rounded-xl" style={{
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05))',
+            border: '2px dashed var(--gold-primary)'
+          }}>
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-2" style={{
+              background: '#DC2626',
+              color: 'white'
+            }}>
+              🔒 خاص
+            </span>
+            <p className="font-semibold mt-2" style={{ color: 'var(--gold-light)' }}>
+              👤 {property.ownerName}
+            </p>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              {property.ownerPhone && (
+                <button 
+                  onClick={callPhone} 
+                  className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    color: 'white'
+                  }}
+                >
+                  ☎️ {property.ownerPhone}
+                </button>
+              )}
+              
+              {/* ✅ زر واتساب للمدير - مصحح */}
+              {(property.ownerWhatsapp || property.ownerPhone) && (
+                <button 
+                  onClick={openWhatsapp} 
+                  className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                    color: 'white'
+                  }}
+                >
+                  💬 واتساب
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -180,48 +313,110 @@ https://web.facebook.com/SOLUTION.ImmobilierS
         {/* للزوار - زر الاستفسار */}
         {!isAdmin && property.ownerName && (
           <div className="mb-4">
-            <button onClick={() => alert(t.properties?.inquirySuccess || 'شكراً!')} className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg font-medium text-sm transition-all hover:shadow-lg">
+            <button 
+              onClick={() => alert(t.properties?.inquirySuccess || 'شكراً!')} 
+              className="w-full py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg"
+              style={{
+                background: 'var(--gradient-gold)',
+                color: 'var(--bg-primary)'
+              }}
+            >
               📩 {t.properties?.inquiry || 'استفسار'}
             </button>
           </div>
         )}
 
-        {/* ===== الأزرار الرئيسية ===== */}
-        <div className="flex gap-2">
-          <Link href={`/properties/${property.id}`} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-center py-2 rounded-lg transition">
-            {t.properties?.details || 'التفاصيل'}
+        {/* ===== ✅ الأزرار الرئيسية ===== */}
+        <div className="flex gap-3">
+          <Link 
+            href={`/properties/${property.id}`} 
+            className="flex-1 text-center py-3 rounded-xl font-bold transition-all hover:shadow-lg"
+            style={{
+              background: 'var(--gradient-gold)',
+              color: 'var(--bg-primary)'
+            }}
+          >
+            {t.properties?.details || 'التفاصيل'} →
           </Link>
           
           {actions && (
             <>
-              <Link href={`/dashboard/properties/form?id=${property.id}`} className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition">
+              <Link 
+                href={`/dashboard/properties/form?id=${property.id}`} 
+                className="px-4 py-3 rounded-xl transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                  color: 'white'
+                }}
+              >
                 ✏️
               </Link>
-              <button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition">
+              <button 
+                onClick={handleDelete} 
+                className="px-4 py-3 rounded-xl transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #DC2626, #EF4444)',
+                  color: 'white'
+                }}
+              >
                 🗑️
               </button>
             </>
           )}
         </div>
 
-        {/* ===== 🆕🆕🆕 أزرار المشاركة ===== */}
-        <div className="mt-3 pt-3 border-t border-slate-700 flex gap-2">
+        {/* ===== ✅✅✅ أزرار المشاركة (واتساب + نسخ) ===== */}
+        <div className="mt-4 pt-4 flex gap-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          
+          {/* ✅✅✅ زر واتساب - مصحح بالرقم الصحيح */}
           <button 
             onClick={shareToWhatsApp}
-            className="flex-1 bg-green-500 hover:bg-green-600 py-2 rounded-lg font-medium text-sm transition flex items-center justify-center gap-1"
+            className="flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 hover:shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #25D366, #128C7E)',
+              color: 'white'
+            }}
           >
             💬 {t.properties?.whatsapp || 'واتساب'}
           </button>
           
+          {/* زر نسخ الرابط */}
           <button 
             onClick={copyLink}
-            className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition"
+            className="px-5 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105"
+            style={{
+              background: 'var(--bg-card)',
+              color: 'var(--gold-primary)',
+              border: '1px solid var(--border-color)'
+            }}
             title={t.common?.copy || 'نسخ'}
           >
             🔗
           </button>
         </div>
       </div>
+
+      {/* ✅ CSS للـ Hover Effects */}
+      <style jsx>{`
+        .property-card-enhanced:hover {
+          transform: translateY(-8px) scale(1.01);
+          box-shadow: 0 20px 60px rgba(212, 175, 55, 0.25);
+          border-color: #D4AF37 !important;
+        }
+        
+        .property-card-enhanced:hover .gold-bar {
+          transform: scaleX(1);
+        }
+        
+        .property-card-enhanced:hover img {
+          transform: scale(1.08) rotate(0.5deg);
+        }
+        
+        /* تحسين الزر */
+        button:hover {
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 }
