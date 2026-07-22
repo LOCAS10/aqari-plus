@@ -4,7 +4,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PropertyCard from "@/components/PropertyCard";
 import { useState } from "react";
-
+import Link from "next/link";
 export default function ArchivePage() {
   const { state } = useApp();
   const { language } = useLanguage();
@@ -144,18 +144,19 @@ export default function ArchivePage() {
             </p>
             
             {/* زر العودة للعقارات المتاحة */}
-            <a 
-              href="/properties"
-              className="btn-primary inline-flex items-center gap-3"
-              style={{
-                padding: '16px 40px',
-                borderRadius: '30px',
-                fontSize: '1.05rem',
-                fontWeight: '800'
-              }}
-            >
-              🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens Disponibles'} ←
-            </a>
+         // ✅ صحيح (يستخدم <Link>)
+<Link 
+  href="/properties"
+  className="btn-primary inline-flex items-center gap-3"
+  style={{
+    padding: '16px 40px',
+    borderRadius: '30px',
+    fontSize: '1.05rem',
+    fontWeight: '800'
+  }}
+>
+  🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens Disponibles'} ←
+</Link>
           </div>
         ) : (
           <>
@@ -218,18 +219,19 @@ export default function ArchivePage() {
                   : '💡 Vous cherchez un bien similaire? Consultez nos biens disponibles!'}
               </p>
               
-              <a 
-                href="/properties"
-                className="btn-secondary inline-flex items-center gap-2 mt-4"
-                style={{
-                  padding: '14px 32px',
-                  borderRadius: '25px',
-                  fontSize: '0.95rem',
-                  fontWeight: '700'
-                }}
-              >
-                🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
-              </a>
+          // ✅ صحيح
+<Link 
+  href="/properties"
+  className="btn-secondary inline-flex items-center gap-2"
+  style={{
+    padding: '14px 32px',
+    borderRadius: '25px',
+    fontSize: '0.95rem',
+    fontWeight: '700'
+  }}
+>
+  🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
+</Link>
             </div>
           </>
         )}
