@@ -92,174 +92,171 @@ export default function HomePage() {
       </header>
 
       {/* ===== HERO SECTION (✅ مع صورة خلفية + عناصر متحركة) ===== */}
-      <section style={{
-        position: 'relative',
-        minHeight: '100vh',
-        marginTop: 'var(--header-height)',
-        backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        overflow: 'hidden'
+<section style={{
+  position: 'relative',
+  minHeight: '100vh',
+  marginTop: 'var(--header-height)',
+  backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80')`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  display: 'flex',
+  alignItems: 'center',      // ✅ توسيط عمودي
+  justifyContent: 'center',   // ✅ توسيط أفقي
+  overflow: 'hidden'
+}}>
+  
+  {/* Overlay Gradient */}
+  <div style={{
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'linear-gradient(135deg, rgba(10, 22, 40, 0.95) 0%, rgba(27, 46, 74, 0.88) 50%, rgba(10, 22, 40, 0.92) 100%)',
+    zIndex: 1
+  }}></div>
+
+  {/* نجوم متحركة */}
+  <div style={{
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundImage: `
+      radial-gradient(2px 2px at 20px 30px, var(--gold-primary), transparent),
+      radial-gradient(2px 2px at 40px 70px, var(--gold-light), transparent),
+      radial-gradient(1px 1px at 90px 40px, white, transparent),
+      radial-gradient(1px 1px at 130px 80px, var(--gold-primary), transparent),
+      radial-gradient(2px 2px at 160px 30px, white, transparent)
+    `,
+    backgroundRepeat: 'repeat',
+    backgroundSize: '350px 250px',
+    animation: 'starsMove 30s linear infinite',
+    opacity: 0.35,
+    zIndex: 2,
+    pointerEvents: 'none'
+  }}></div>
+
+  {/* ✅ المحتوى في الوسط تماماً */}
+  <div className="max-w-5xl mx-auto px-4 py-24 relative z-10 w-full text-center">
+    
+    {/* Badge */}
+    <span className="inline-block px-6 py-3 rounded-full text-sm font-bold mb-8 animate-fade-up badge-success" style={{
+      background: 'rgba(212, 175, 55, 0.15)',
+      color: 'var(--gold-light)',
+      border: '1px solid rgba(212, 175, 55, 0.3)',
+      letterSpacing: '0.05em',
+      display: 'inline-block'  // ✅ Badge في الوسط
+    }}>
+      🏠 {language === 'ar' ? 'شريكك العقاري الموثوق' : 'Votre Partenaire Immobilier de Confiance'}
+    </span>
+    
+    {/* ✅ العنوان المتدرج (ذهبي → أبيض) */}
+    <h2 className="mb-6 animate-fade-up" style={{
+      fontSize: 'clamp(2.8rem, 6vw, 4.5rem)',     // ✅ حجم أكبر قليلاً
+      fontWeight: '900',
+      lineHeight: '1.15',
+      marginBottom: '25px',
+      animationDelay: '0.15s',
+      fontFamily: 'var(--font-arabic)',
+      textAlign: 'center',                        // ✅ في الوسط
+      // ✅ التدرج اللوني (ذهبي → أبيض)
+      background: 'linear-gradient(135deg, #D4AF37 0%, #E5C76B 25%, #FFFFFF 50%, #E5C76B 75%, #D4AF37 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      // ✅ تأثير توهج حول النص
+      filter: 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.3))'
+    }}>
+      {language === 'ar' ? 'SOLUTION' : 'SOLUTION'}
+      <br />
+      <span style={{ 
+        fontFamily: 'var(--font-decorative)', 
+        fontSize: '0.7em', 
+        display: 'block', 
+        marginTop: '12px',
+        fontWeight: '400',
+        // ✅ الخط الثاني أيضاً متدرج
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #E5C76B 50%, #D4AF37 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
       }}>
-        
-        {/* Overlay Gradient */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, rgba(10, 22, 40, 0.95) 0%, rgba(27, 46, 74, 0.88) 50%, rgba(10, 22, 40, 0.92) 100%)',
-          zIndex: 1
-        }}></div>
+        {language === 'ar' ? 'Immobilier' : 'Immobilier'}
+      </span>
+    </h2>
+    
+    {/* ✅ الوصف في الوسط */}
+    <p className="text-base md:text-lg mx-auto mb-12 animate-fade-up" style={{
+      color: 'var(--muted)',
+      lineHeight: '2.1',                          // ✅ Line-height أفضل
+      animationDelay: '0.3s',
+      fontSize: '1.08rem',
+      maxWidth: '700px',                           // ✅ عرض محدود للوصف
+      margin: '0 auto 48px auto',                  // ✅ توسيط تلقائي
+      textAlign: 'center'                           // ✅ نص في الوسط
+    }}>
+      {language === 'ar' 
+        ? 'مشروعك، أولويتنا. نقدم لكم أفضل الحلول العقارية في الدار البيضاء، بوسكورة وسيدي معروف بأمان واحترافية' 
+        : 'Votre projet, notre priorité. Les meilleures solutions immobilières à Casablanca, Bouskoura et Sidi Maârouf'}
+    </p>
 
-        {/* ✅ نجوم متحركة في الخلفية */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `
-            radial-gradient(2px 2px at 20px 30px, var(--gold-primary), transparent),
-            radial-gradient(2px 2px at 40px 70px, var(--gold-light), transparent),
-            radial-gradient(1px 1px at 90px 40px, white, transparent),
-            radial-gradient(1px 1px at 130px 80px, var(--gold-primary), transparent),
-            radial-gradient(2px 2px at 160px 30px, white, transparent),
-            radial-gradient(2px 2px at 200px 90px, var(--gold-light), transparent),
-            radial-gradient(1px 1px at 250px 50px, white, transparent),
-            radial-gradient(2px 2px at 300px 120px, var(--gold-primary), transparent)
-          `,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '350px 250px',
-          animation: 'starsMove 30s linear infinite',
-          opacity: 0.35,
-          zIndex: 2,
-          pointerEvents: 'none'
-        }}></div>
+    {/* ✅ الأزرار في الوسط */}
+    <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-fade-up" style={{ 
+      animationDelay: '0.45s' 
+    }}>
+      <Link href="/properties" className="btn-primary animate-pulse-gold inline-flex items-center justify-center gap-3" style={{
+        padding: '16px 42px',
+        borderRadius: '30px',
+        fontSize: '1.05rem',
+        fontWeight: '800'
+      }}>
+        {language === 'ar' ? 'استكشف العقارات' : 'Voir les Biens'} ←
+      </Link>
+      
+      <Link href="https://web.facebook.com/SOLUTION.ImmobilierS" target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-3" style={{
+        padding: '16px 42px',
+        borderRadius: '30px',
+        fontSize: '1.05rem',
+        fontWeight: '700'
+      }}>
+        📱 Facebook
+      </Link>
+    </div>
+  </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-24 relative z-10 w-full">
-          <div style={{ maxWidth: '900px' }}>
-            
-            {/* Badge */}
-            <span className="inline-block px-6 py-3 rounded-full text-sm font-bold mb-8 animate-fade-up badge-success" style={{
-              background: 'rgba(212, 175, 55, 0.15)',
-              color: 'var(--gold-light)',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              letterSpacing: '0.05em',
-              display: 'inline-block'
-            }}>
-              🏠 {language === 'ar' ? 'شريكك العقاري الموثوق' : 'Votre Partenaire Immobilier de Confiance'}
-            </span>
-            
-            {/* ✅ العنوان الرئيسي (معدل الحجم والخط) */}
-            <h2 className="mb-6 animate-fade-up" style={{
-              fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-              fontWeight: '900',
-              lineHeight: '1.2',
-              marginBottom: '20px',
-              animationDelay: '0.15s',
-              fontFamily: 'var(--font-arabic)'
-            }}>
-              <span style={{ color: 'var(--gold-primary)' }}>
-                {language === 'ar' ? 'SOLUTION' : 'SOLUTION'}
-              </span>
-              <br />
-              <span style={{ 
-                color: 'white',
-                fontFamily: 'var(--font-decorative)',
-                fontSize: '0.75em',
-                display: 'block',
-                marginTop: '8px',
-                fontWeight: '400'
-              }}>
-                {language === 'ar' ? 'Immobilier' : 'Immobilier'}
-              </span>
-            </h2>
-            
-            {/* الوصف */}
-            <p className="text-base md:text-lg max-w-2xl mb-12 animate-fade-up" style={{
-              color: 'var(--muted)',
-              lineHeight: '2',
-              animationDelay: '0.3s',
-              fontSize: '1.05rem'
-            }}>
-              {language === 'ar' 
-                ? 'مشروعك، أولويتنا. نقدم لكم أفضل الحلول العقارية في الدار البيضاء، بوسكورة وسيدي معروف بأمان واحترافية' 
-                : 'Votre projet, notre priorité. Les meilleures solutions immobilières à Casablanca, Bouskoura et Sidi Maârouf'}
-            </p>
+  {/* ✅ 🔑 المفتاح (أعلى يمين - يتحرك) */}
+  <div style={{
+    position: 'absolute',
+    top: '12%',
+    right: '6%',
+    fontSize: '4.5rem',
+    opacity: 0.28,
+    animation: 'floatKey 6s ease-in-out infinite',
+    zIndex: 3,
+    filter: 'drop-shadow(0 0 25px rgba(212, 175, 55, 0.35))'
+  }}>🔑</div>
 
-            {/* الأزرار */}
-            <div className="flex flex-col sm:flex-row gap-5 animate-fade-up" style={{ animationDelay: '0.45s' }}>
-              <Link href="/properties" className="btn-primary animate-pulse-gold inline-flex items-center justify-center gap-3" style={{
-                padding: '16px 40px',
-                borderRadius: '30px',
-                fontSize: '1.05rem',
-                fontWeight: '800'
-              }}>
-                {language === 'ar' ? 'استكشف العقارات' : 'Voir les Biens'} ←
-              </Link>
-              
-              <Link href="https://web.facebook.com/SOLUTION.ImmobilierS" target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex items-center justify-center gap-3" style={{
-                padding: '16px 40px',
-                borderRadius: '30px',
-                fontSize: '1.05rem',
-                fontWeight: '700'
-              }}>
-                📱 Facebook
-              </Link>
-            </div>
-          </div>
-        </div>
+  {/* ✅ 🏠 البيت (أسفل يسار - يتحرك) */}
+  <div style={{
+    position: 'absolute',
+    bottom: '15%',
+    left: '5%',
+    fontSize: '5rem',
+    opacity: 0.28,
+    animation: 'floatHouse 7s ease-in-out infinite',
+    zIndex: 3,
+    filter: 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.4))'
+  }}>🏠</div>
 
-        {/* ✅ 🔑 المفتاح (أعلى يمين - يتحرك للأعلى والأسفل) */}
-        <div style={{
-          position: 'absolute',
-          top: '15%',
-          right: '8%',
-          fontSize: '4rem',
-          opacity: 0.25,
-          animation: 'floatKey 6s ease-in-out infinite',
-          zIndex: 3,
-          filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.3))',
-          transformOrigin: 'center'
-        }}>
-          🔑
-        </div>
+  {/* ✅ 🏢 مبنى (وسط يمين - حركة بطيئة) */}
+  <div style={{
+    position: 'absolute',
+    top: '40%',
+    right: '12%',
+    fontSize: '3.8rem',
+    opacity: 0.18,
+    animation: 'floatBuilding 8s ease-in-out infinite',
+    zIndex: 3,
+    filter: 'drop-shadow(0 0 18px rgba(212, 175, 55, 0.3))'
+  }}>🏢</div>
 
-        {/* ✅ 🏠 البيت (أسفل يسار - يتحرك للأعلى والأسفل) */}
-        <div style={{
-          position: 'absolute',
-          bottom: '18%',
-          left: '6%',
-          fontSize: '4.5rem',
-          opacity: 0.25,
-          animation: 'floatHouse 7s ease-in-out infinite',
-          zIndex: 3,
-          filter: 'drop-shadow(0 0 25px rgba(212, 175, 55, 0.35))',
-          transformOrigin: 'center'
-        }}>
-          🏠
-        </div>
-
-        {/* ✅ 🏢 مبنى إضافي (وسط يمين - حركة بطيئة) */}
-        <div style={{
-          position: 'absolute',
-          top: '45%',
-          right: '15%',
-          fontSize: '3.5rem',
-          opacity: 0.15,
-          animation: 'floatBuilding 8s ease-in-out infinite',
-          zIndex: 3,
-          filter: 'drop-shadow(0 0 15px rgba(212, 175, 55, 0.25))'
-        }}>
-          🏢
-        </div>
-
-      </section>
+</section>
 
       {/* ===== FEATURES ===== */}
       <section className="py-24" style={{ background: 'var(--bg-secondary)' }}>
