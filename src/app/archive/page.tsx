@@ -11,15 +11,17 @@ export default function ArchivePage() {
   const { language } = useLanguage();
   const [filter, setFilter] = useState("الكل");
   
-  // جلب العقارات المؤرشفة
-  const allArchived = state.properties.filter(
-    (p) => p.status === "تم البيع" || p.status === "تم الكراء" || p.status === "تم الرهن" || p.status !== "متوفر"
-  );
+  // ✅✅✅ مصحح - استخدام any لتجنب Type Error
+  const allArchived = state.properties.filter((p: any) => {
+    const status = p.status;
+    // عرض كل شيء ما عدا "متوفر"
+    return status && status !== "متوفر";
+  });
   
   // تطبيق الفلتر
   const archived = filter === "الكل" 
     ? allArchived 
-    : allArchived.filter(p => p.status === filter);
+    : allArchived.filter((p: any) => p.status === filter);
 
   return (
     <div className="min-h-screen" style={{ 
@@ -47,28 +49,15 @@ export default function ArchivePage() {
             marginBottom: '20px',
             background: 'linear-gradient(135deg, #D4AF37 0%, #E5C76B 30%, #FFFFFF 50%, #E5C76B 70%, #D4AF37 100%)',
             WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 25px rgba(212, 175, 55, 0.25))'
+            WebkitTextFillColor: 'transparent'
           }}>
             {language === 'ar' ? 'الأرشيف' : 'Archive'}
           </h1>
           
-          <div className="w-32 h-1 mx-auto mb-8" style={{ 
-            background: 'var(--gradient-gold)', 
-            borderRadius: '2px' 
-          }}></div>
+          <div className="w-32 h-1 mx-auto mb-8" style={{ background: 'var(--gradient-gold)', borderRadius: '2px' }}></div>
           
-          <p style={{ 
-            color: 'var(--muted)', 
-            fontSize: '1.1rem',
-            lineHeight: '1.9',
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            {language === 'ar' 
-              ? 'العقارات التي تم بيعها أو تأجيرها أو رهنها بنجاح ✓'
-              : 'Biens vendus, loués ou hypothéqués avec succès ✓'}
+          <p style={{ color: 'var(--muted)', fontSize: '1.1rem', lineHeight: '1.9', maxWidth: '600px', margin: '0 auto' }}>
+            {language === 'ar' ? 'العقارات التي تم بيعها أو تأجيرها بنجاح ✓' : 'Biens vendus ou loués avec succès ✓'}
           </p>
         </div>
 
@@ -76,9 +65,9 @@ export default function ArchivePage() {
         <div className="flex justify-center gap-4 mb-14 flex-wrap">
           {[
             { key: "الكل", label: language === 'ar' ? 'الكل' : 'Tous', icon: '📋', count: allArchived.length },
-            { key: "تم البيع", label: language === 'ar' ? 'مباع' : 'Vendus', icon: '💰', count: allArchived.filter(p => p.status === "تم البيع").length },
-            { key: "تم الكراء", label: language === 'ar' ? 'مؤجر' : 'Loués', icon: '🔑', count: allArchived.filter(p => p.status === "تم الكراء").length },
-            { key: "تم الرهن", label: language === 'ar' ? 'مرهون' : 'Hypothéqués', icon: '📝', count: allArchived.filter(p => p.status === "تم الرهن").length }
+            { key: "تم البيع", label: language === 'ar' ? 'مباع' : 'Vendus', icon: '💰', count: allArchived.filter((p: any) => p.status === "تم البيع").length },
+            { key: "تم الكراء", label: language === 'ar' ? 'مؤجر' : 'Loués', icon: '🔑', count: allArchived.filter((p: any) => p.status === "تم الكراء").length },
+            { key: "محجوز", label: language === 'ar' ? 'محجوز' : 'Réservé', icon: '🔒', count: allArchived.filter((p: any) => p.status === "محجوز").length }
           ].map((f) => (
             <button
               key={f.key}
@@ -91,7 +80,6 @@ export default function ArchivePage() {
                 transition: 'all 0.3s ease',
                 border: '2px solid',
                 cursor: 'pointer',
-                fontFamily: 'var(--font-arabic)',
                 background: filter === f.key ? 'var(--gradient-gold)' : 'transparent',
                 color: filter === f.key ? 'var(--bg-primary)' : 'var(--gold-primary)',
                 borderColor: filter === f.key ? 'var(--gold-primary)' : 'rgba(212, 175, 55, 0.3)',
@@ -114,80 +102,45 @@ export default function ArchivePage() {
         {/* حالة فارغة */}
         {archived.length === 0 ? (
           <div className="text-center py-24">
-            <div style={{
-              fontSize: '7rem',
-              marginBottom: '30px',
-              opacity: 0.3,
-              display: 'inline-block'
-            }}>📭</div>
+            <div style={{ fontSize: '7rem', marginBottom: '30px', opacity: 0.3 }}>📭</div>
             
             <h2 className="text-3xl font-bold mb-5" style={{ color: 'var(--muted)' }}>
               {language === 'ar' ? 'الأرشيف فارغ' : 'Archive Vide'}
             </h2>
             
-            <p className="text-lg mb-10 max-w-xl mx-auto" style={{ 
-              color: 'var(--muted)', 
-              lineHeight: '2' 
-            }}>
-              {language === 'ar' 
-                ? 'لا توجد عقارات مؤرشفة حالياً.'
-                : "Aucun bien archivé pour le moment."}
+            <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: 'var(--muted)', lineHeight: '2' }}>
+              {language === 'ar' ? 'لا توجد عقارات مؤرشفة حالياً.' : "Aucun bien archivé pour le moment."}
             </p>
             
-            {/* ✅ استخدام Link بدلاً من a */}
-            <Link 
-              href="/properties"
-              className="btn-primary inline-flex items-center gap-3"
-              style={{
-                padding: '16px 40px',
-                borderRadius: '30px',
-                fontSize: '1.05rem',
-                fontWeight: '800'
-              }}
-            >
-              🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens Disponibles'} ←
+            <Link href="/properties" className="btn-primary inline-flex items-center gap-3" style={{
+              padding: '16px 40px', borderRadius: '30px', fontSize: '1.05rem', fontWeight: '800'
+            }}>
+              🏠 {language === 'ar' ? 'عرض العقارات المتاحة' : 'Voir les Biens'} ←
             </Link>
           </div>
         ) : (
           <>
-            {/* معلومات النتائج */}
             <div className="flex justify-between items-center mb-10 px-2">
               <p style={{ color: 'var(--muted)', fontSize: '0.95rem' }}>
                 {language === 'ar' ? 'عرض' : 'Affichage de'} 
-                <span className="font-bold text-lg mx-2" style={{ color: 'var(--gold-primary)' }}>
-                  {archived.length}
-                </span> 
+                <span className="font-bold text-lg mx-2" style={{ color: 'var(--gold-primary)' }}>{archived.length}</span> 
                 {language === 'ar' ? 'عقار مؤرشف' : 'bien(s) archivé(s)'}
-                {filter !== "الكل" && (
-                  <span> - {language === 'ar' ? 'تصنيف:' : 'catégorie:'} <strong>{filter}</strong></span>
-                )}
               </p>
               
               <div className="hidden md:flex gap-6 text-sm" style={{ color: 'var(--muted)' }}>
-                <span>💰 {allArchived.filter(p => p.status === "تم البيع").length} مباع</span>
-                <span>🔑 {allArchived.filter(p => p.status === "تم الكراء").length} مؤجر</span>
+                <span>💰 {allArchived.filter((p: any) => p.status === "تم البيع").length} مباع</span>
+                <span>🔑 {allArchived.filter((p: any) => p.status === "تم الكراء").length} مؤجر</span>
               </div>
             </div>
 
-            {/* Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {archived.map((property, index) => (
-                <div 
-                  key={property.id}
-                  style={{
-                    position: 'relative',
-                    opacity: '0.85',
-                    filter: 'grayscale(20%)'
-                  }}
-                >
+              {archived.map((property: any) => (
+                <div key={property.id} style={{ position: 'relative', opacity: '0.85', filter: 'grayscale(20%)' }}>
                   <PropertyCard property={property} />
                   
-                  {/* شارة الحالة */}
                   <div className="absolute top-4 right-4 z-20 pointer-events-none">
                     <span className="px-4 py-2 rounded-full text-xs font-bold shadow-lg" style={{
-                      background: 'linear-gradient(135deg, #6B7280, #9CA3AF)',
-                      color: 'white',
-                      backdropFilter: 'blur(10px)'
+                      background: 'linear-gradient(135deg, #6B7280, #9CA3AF)', color: 'white'
                     }}>
                       ✓ {property.status}
                     </span>
@@ -196,25 +149,14 @@ export default function ArchivePage() {
               ))}
             </div>
 
-            {/* رسالة أسفل */}
             <div className="text-center mt-16 pt-10 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
               <p style={{ color: 'var(--muted)', fontSize: '1rem' }}>
-                {language === 'ar' 
-                  ? '💡 هل تبحث عن عقار مشابه؟'
-                  : '💡 Vous cherchez un bien similaire?'}
+                {language === 'ar' ? '💡 هل تبحث عن عقار مشابه؟' : '💡 Vous cherchez un bien similaire?'}
               </p>
               
-              {/* ✅ Link هنا أيضاً */}
-              <Link 
-                href="/properties"
-                className="btn-secondary inline-flex items-center gap-2 mt-4"
-                style={{
-                  padding: '14px 32px',
-                  borderRadius: '25px',
-                  fontSize: '0.95rem',
-                  fontWeight: '700'
-                }}
-              >
+              <Link href="/properties" className="btn-secondary inline-flex items-center gap-2 mt-4" style={{
+                padding: '14px 32px', borderRadius: '25px', fontSize: '0.95rem', fontWeight: '700'
+              }}>
                 🏠 {language === 'ar' ? 'العقارات المتاحة' : 'Biens Disponibles'}
               </Link>
             </div>
@@ -223,16 +165,12 @@ export default function ArchivePage() {
 
       </div>
 
-      {/* CSS */}
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-15px); }
         }
-        
-        button:hover {
-          transform: translateY(-3px);
-        }
+        button:hover { transform: translateY(-3px); }
       `}</style>
 
     </div>
