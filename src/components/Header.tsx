@@ -134,26 +134,23 @@ export default function Header() {
             <LanguageSwitcher />
           </nav>
 
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="hamburger-btn"
-            style={{
-              display: "none",
-              width: "44px",
-              height: "44px",
-              borderRadius: "14px",
-              color: "var(--gold-primary)",
-              background: mobileMenuOpen ? "rgba(212, 175, 55, 0.15)" : "transparent",
-              border: mobileMenuOpen ? "1px solid rgba(212, 175, 55, 0.3)" : "1px solid transparent",
-              cursor: "pointer",
-              zIndex: 10001,
-              transition: "all 0.3s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            aria-label="Menu"
-          >
+         <button
+  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+  className="hamburger-btn"
+  style={{
+    width: "44px",
+    height: "44px",
+    borderRadius: "14px",
+    color: "var(--gold-primary)",
+    background: mobileMenuOpen ? "rgba(212, 175, 55, 0.15)" : "transparent",
+    border: mobileMenuOpen ? "1px solid rgba(212, 175, 55, 0.3)" : "1px solid transparent",
+    cursor: "pointer",
+    zIndex: 10001,
+    transition: "all 0.3s ease",
+  }}
+  aria-label="Menu"
+>
+          
             {mobileMenuOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12" />
