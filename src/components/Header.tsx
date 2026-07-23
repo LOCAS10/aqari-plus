@@ -134,7 +134,7 @@ export default function Header() {
             <LanguageSwitcher />
           </nav>
 
-          {/* زر Hamburger - بدون display مكرر! */}
+          {/* زر Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="hamburger-btn"
@@ -179,7 +179,7 @@ export default function Header() {
         />
       )}
 
-      {/* Side Drawer */}
+      {/* ===== Side Drawer - العناوين العمودية ===== */}
       <div
         style={{
           position: "fixed",
@@ -199,14 +199,16 @@ export default function Header() {
           flexDirection: "column",
         }}
       >
+        {/* رأس القائمة */}
         <div style={{
-          padding: "28px 24px 20px",
+          padding: "28px 20px 16px",
           borderBottom: "1px solid rgba(212, 175, 55, 0.15)",
           background: "rgba(212, 175, 55, 0.03)",
+          textAlign: "center",
         }}>
           <Link href="/" onClick={() => setMobileMenuOpen(false)} style={{ textDecoration: "none" }}>
             <div style={{
-              fontSize: "1.15rem",
+              fontSize: "1.1rem",
               fontWeight: "900",
               background: "linear-gradient(135deg, #D4AF37, #FFFFFF)",
               WebkitBackgroundClip: "text",
@@ -215,45 +217,58 @@ export default function Header() {
             }}>
               SOLUTION IMMOBILIER
             </div>
-            <div style={{ color: "var(--muted)", fontSize: "0.75rem", letterSpacing: "1px" }}>
-              {language === 'ar' ? 'Real Estate' : 'Immobilier'}
+            <div style={{ color: "var(--muted)", fontSize: "0.7rem", letterSpacing: "1px" }}>
+              Real Estate
             </div>
           </Link>
         </div>
 
-        <nav style={{ padding: "16px 16px", flex: 1 }}>
+        {/* ===== الروابط - شبكة عمودية (2 عمود) ===== */}
+        <nav style={{ 
+          padding: "20px 16px", 
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "8px",
+          alignContent: "start",
+        }}>
           
-          <DrawerItem href="/" icon={<HomeIcon />} text={language === "ar" ? "Home" : "Accueil"} onClick={() => setMobileMenuOpen(false)} isFirst />
+          <DrawerItem href="/" icon={<HomeIcon />} text={language === "ar" ? "Home" : "Accueil"} onClick={() => setMobileMenuOpen(false)} />
           <DrawerItem href="/properties" icon={<BuildingIcon />} text={language === "ar" ? "Properties" : "Biens"} onClick={() => setMobileMenuOpen(false)} />
           <DrawerItem href="/favorites" icon={<HeartIcon />} text={`${language === 'ar' ? 'Favorites' : 'Favoris'} (${state.favorites?.length || 0})`} badge={state.favorites?.length || 0} onClick={() => setMobileMenuOpen(false)} highlight />
-          <DrawerItem href="/archive" icon={<ArchiveIcon />} text={language === "ar" ? "Archive" : "Archive"} onClick={() => setMobileMenuOpen(false)} />
+          <DrawerItem href="/archive" icon={<ArchiveIcon />} text={language === "ar' ? "Archive" : "Archive"} onClick={() => setMobileMenuOpen(false)} />
+          
+          {/* زر الدخول - يمتد على العمودين */}
+          <div style={{ 
+            gridColumn: "1 / -1",
+            paddingTop: "16px",
+            marginTop: "8px",
+            borderTop: "1px solid rgba(212, 175, 55, 0.1)",
+          }}>
+            <DrawerItem href="/login" icon={<LoginIcon />} text={t.nav?.login || language === "ar" ? "Login" : "Connexion"} onClick={() => setMobileMenuOpen(false)} isPrimary />
+          </div>
 
-          <div style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent)", margin: "20px 12px 16px" }}></div>
-
-          <DrawerItem href="/login" icon={<LoginIcon />} text={t.nav?.login || language === "ar" ? "Login" : "Connexion"} onClick={() => setMobileMenuOpen(false)} isPrimary />
-
-          <div style={{ padding: "16px 12px 8px" }}>
+          {/* اللغة */}
+          <div style={{ 
+            gridColumn: "1 / -1",
+            paddingTop: "12px",
+            display: "flex",
+            justifyContent: "center",
+          }}>
             <LanguageSwitcher />
           </div>
         </nav>
 
+        {/* التذييل */}
         <div style={{ 
-          padding: "20px 24px",
+          padding: "20px",
           borderTop: "1px solid rgba(212, 175, 55, 0.1)",
           background: "rgba(0,0,0,0.15)",
+          textAlign: "center",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-            <div style={{
-              width: "36px", height: "36px", borderRadius: "10px",
-              background: "linear-gradient(135deg, #D4AF37, #E5C76B)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
-            }}>🏢</div>
-            <div>
-              <div style={{ color: "white", fontWeight: "700", fontSize: "0.85rem" }}>SOLUTION Immobilier</div>
-              <div style={{ color: "var(--muted)", fontSize: "0.7rem" }}>{language === 'ar' ? 'Casablanca' : 'Casablanca'}</div>
-            </div>
-          </div>
-          <p style={{ color: "var(--muted)", fontSize: "0.68rem", margin: 0 }}>© 2024 All rights reserved</p>
+          <div style={{ marginBottom: "10px" }}>🏢</div>
+          <p style={{ color: "white", fontWeight: "700", fontSize: "0.85rem", margin: "0 0 4px 0 }}>SOLUTION Immobilier</p>
+          <p style={{ color: "var(--muted)", fontSize: "0.68rem", margin: 0 }}>© 2024</p>
         </div>
       </div>
 
@@ -305,41 +320,93 @@ export default function Header() {
   );
 }
 
+// ===== الأيقونات =====
 function HomeIcon() {
-  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
+  return (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
 }
 
 function BuildingIcon() {
-  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 11h.01M12 16h.01M8 11h.01M16 11h.01M8 16h.01M16 16h.01"/></svg>);
+  return (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 11h.01M12 16h.01M8 11h.01M16 11h.01M8 16h.01M16 16h.01"/></svg>);
 }
 
 function HeartIcon() {
-  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/></svg>);
+  return (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/></svg>);
 }
 
 function ArchiveIcon() {
-  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1" ry="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>);
+  return (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1" ry="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>);
 }
 
 function LoginIcon() {
-  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>);
+  return (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>);
 }
 
-function DrawerItem({ href, icon, text, badge, isPrimary, isFirst, highlight, onClick }: { href: string; icon: React.ReactNode; text: string; badge?: number; isPrimary?: boolean; isFirst?: boolean; highlight?: boolean; onClick: () => void }) {
+// ===== عنصر القائمة - عمودي =====
+function DrawerItem({ href, icon, text, badge, isPrimary, isFirst, highlight, onClick }: { 
+  href: string; 
+  icon: React.ReactNode; 
+  text: string; 
+  badge?: number;
+  isPrimary?: boolean;
+  isFirst?: boolean;
+  highlight?: boolean;
+  onClick: () => void;
+}) {
   return (
     <Link href={href} onClick={onClick} style={{
-      display: "flex", alignItems: "center", gap: "14px",
-      padding: isFirst ? "16px 18px" : "14px 18px", borderRadius: "14px",
-      textDecoration: "none", color: isPrimary ? "#1a1a2e" : "white",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "8px",
+      padding: "14px 10px",
+      borderRadius: "14px",
+      textDecoration: "none",
+      color: isPrimary ? "#1a1a2e" : "white",
       background: isPrimary ? "linear-gradient(135deg, #D4AF37, #E5C76B)" : highlight ? "rgba(239, 68, 68, 0.08)" : "transparent",
       border: isPrimary ? "none" : highlight ? "1px solid rgba(239, 68, 68, 0.15)" : "1px solid transparent",
-      fontWeight: isPrimary ? "800" : "600", fontSize: "0.98rem", transition: "all 0.25s ease",
-      marginTop: isFirst ? "0" : "2px",
+      fontWeight: isPrimary ? "800" : "600",
+      fontSize: "0.85rem",
+      transition: "all 0.25s ease",
     }}>
-      <span style={{ width: "38px", height: "38px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: isPrimary ? "rgba(255,255,255,0.2)" : highlight ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.05)", color: isPrimary ? "#1a1a2e" : highlight ? "#EF4444" : "var(--gold-primary)", flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1 }}>{text}</span>
-      {badge !== undefined && badge > 0 && !isPrimary && (<span style={{ background: highlight ? "#EF4444" : "var(--gold-primary)", color: "white", borderRadius: "20px", minWidth: "24px", height: "24px", fontSize: "11px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 8px" }}>{badge > 99 ? '99+' : badge}</span>)}
-      <span style={{ opacity: 0.35, fontSize: "0.9rem" }}>&#8592;</span>
+      {/* أيقونة كبيرة */}
+      <span style={{
+        width: "46px",
+        height: "46px",
+        borderRadius: "13px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: isPrimary ? "rgba(255,255,255,0.25)" : highlight ? "rgba(239, 68, 68, 0.12)" : "rgba(255,255,255,0.06)",
+        color: isPrimary ? "#1a1a2e" : highlight ? "#EF4444" : "var(--gold-primary)",
+        flexShrink: 0,
+      }}>{icon}</span>
+      
+      {/* النص */}
+      <span style={{ 
+        textAlign: "center",
+        lineHeight: "1.3",
+        fontSize: "0.82rem"
+      }}>{text}</span>
+      
+      {/* Badge صغير */}
+      {badge !== undefined && badge > 0 && !isPrimary && (
+        <span style={{
+          background: highlight ? "#EF4444" : "var(--gold-primary)",
+          color: "white",
+          borderRadius: "10px",
+          minWidth: "20px",
+          height: "20px",
+          fontSize: "10px",
+          fontWeight: "700",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          padding: "0 6px",
+        }}>
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
