@@ -69,7 +69,7 @@ export default function Header() {
               {language === "ar" ? "العقارات" : "Biens"}
             </Link>
 
-            {/* ✅❤️ المفضلة - أيقونة فقط */}
+         
             <Link
               href="/favorites"
               className="nav-link icon-btn"
@@ -102,7 +102,7 @@ export default function Header() {
               )}
             </Link>
 
-            {/* ✅📦 الأرشيف - أيقونة فقط */}
+       
             <Link
               href="/archive"
               className="nav-link icon-btn"
@@ -148,7 +148,7 @@ export default function Header() {
           >
             <div
               style={{
-                fontSize: scrolled ? "1.4rem" : "1.7rem",
+                fontSize: scrolled ? "1rem" : "1rem",
                 fontWeight: "900",
                 letterSpacing: "2px",
                 transition: "font-size 0.3s ease",
