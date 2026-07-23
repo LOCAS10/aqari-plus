@@ -254,14 +254,14 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
           />
           
-          <DrawerItem 
-            href="/favorites" 
-            icon={<HeartIcon />}
-            text={language === "ar' ? "المفضلة" : "Favoris"}
-            badge={state.favorites?.length || 0}
-            onClick={() => setMobileMenuOpen(false)}
-            highlight
-          />
+   <DrawerItem 
+  href="/favorites" 
+  icon={<HeartIcon />}
+  text={language === 'ar' ? "المفضلة" : "Favoris"}  ← ✅ صحّح هذا
+  badge={state.favorites?.length || 0}
+  onClick={() => setMobileMenuOpen(false)}
+  highlight
+/>
           
           <DrawerItem 
             href="/archive" 
