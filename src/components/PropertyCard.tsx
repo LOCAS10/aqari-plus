@@ -4,19 +4,34 @@ import Link from "next/link";
 import { Property } from "@/lib/types";
 import { useAppContext } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useState, useEffect } from "react";
 
-// ===== تنسيق السعر =====
-export const formatPrice = (n: number) => {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(2)} مليون`;
-  if (n >= 1000) return `${(n / 1000).toFixed(0)} ألف`;
-  return n.toString();
+// ===== تنسيق السعر - بالأرقام فقط! =====
+export const formatPrice = (n: number): string => {
+  // ✅✅✅ إرجاع الأرقام مع فاصلة الآلاف (بدون "ألف" أو "مليون")
+  return n.toLocaleString('ar-MA'); // ← "2,000" بدلاً من "2 ألف"
 };
 
-export const displayPrice = (property: Property, t?: any) => {
+export const displayPrice = (property: Property, t?: any): string => {
   const currency = "درهم";
-  if (property.operation === "بيع") return `${formatPrice(property.price)} ${currency}`;
-  if (property.operation === "كراء") return `${formatPrice(property.rent)} ${currency} ${t?.properties?.perMonth || "/mois"}`;
+  
+  if (property.operation === "بيع") {
+    return `${formatPrice(property.price)} ${currency}`;
+  }
+  if (property.operation === "كراء") {
+    // ✅ "2000 درهم/شهر" بدلاً من "2 ألف درهم/شهر"
+    const perMonth = t?.properties?.perMonth || "/للشهر";
+    return `${formatPrice(property.rent)} ${currency} ${perMonth}`;
+  }
   return `رهن: ${formatPrice(property.mortgage)} ${currency}`;
+};
+
+// ✅✅✅ دالة جديدة - تنسيق الطابق
+export const formatFloor = (floor: number | undefined): string => {
+  if (floor === undefined || floor === null) return '';
+  if (floor === 0) return 'طابق أرضي';     // ← 0 = الأرضي
+  if (floor < 0) return 'قبو';           // ← سالب = قبو
+  return `الطابق ${floor}`;             // ← عادي
 };
 
 export default function PropertyCard({
@@ -28,21 +43,49 @@ export default function PropertyCard({
 }) {
   const { state, dispatch } = useAppContext();
   const { t, language } = useLanguage();
-  const isFav = state.favorites.includes(property.id);
+  
+  const [isFav, setIsFav] = useState(false);
+  
+  useEffect(() => {
+    if (state && state.favorites) {
+      const fav = state.favorites.includes(property.id);
+      setIsFav(fav);
+      console.log(`[PropertyCard ${property.id}] isFav:`, fav);
+    }
+  }, [state?.favorites, property.id]);
+
   const isAdmin = state.currentUser?.role === "مدير";
 
   // ===== المفضلة =====
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch({ type: "TOGGLE_FAV", payload: property.id });
+    e.stopPropagation();
+    
+    console.log('=== ❤️ handleFav Triggered ===');
+    console.log('Property ID:', property.id);
+    console.log('Current isFav:', isFav);
+    
+    const newFavState = !isFav;
+    setIsFav(newFavState);
+    
+    try {
+      if (!dispatch || typeof dispatch !== 'function') {
+        throw new Error('dispatch غير متوفر');
+      }
+      
+      dispatch({ type: "TOGGLE_FAV", payload: property.id });
+      console.log(`✅ تم ${newFavState ? 'إضافة' : 'إزالة'} العقار من المفضلة`);
+      
+    } catch (error) {
+      console.error('❌ خطأ في handleFav:', error);
+      setIsFav(!newFavState);
+    }
   };
 
-  // ===== ✅✅✅ واتساب - مصحح بالرقم الصحيح =====
+  // ===== واتساب =====
   const openWhatsapp = () => {
-    // ✅ استخدام الرقم الثابت الصحيح
     const whatsappNumber = "212607633144";
     
-    // رسالة مخصصة
     const message = language === 'ar' 
       ? `مرحباً، أنا مهتم بهذا العقار:\n🏠 ${property.propertyType} ${property.operation} - ${property.city}\n💰 ${displayPrice(property, t)}\n\nمن موقع SOLUTION Immobilier`
       : `Bonjour, je suis intéressé par ce bien:\n🏠 ${property.propertyType} ${property.operation} - ${property.city}\n💰 ${displayPrice(property, t)}\n\nDepuis SOLUTION Immobilier`;
@@ -53,63 +96,27 @@ export default function PropertyCard({
 
   // ===== هاتف =====
   const callPhone = () => {
-    const phone = property.ownerPhone || "0607633144"; // ✅ رقم احتياطي
+    const phone = property.ownerPhone || "0607633144";
     window.open(`tel:${phone}`, '_self');
   };
 
-  // ===== ✅✅✅ مشاركة عبر واتساب - مصححة =====
+  // ===== مشاركة واتساب =====
   const shareToWhatsApp = () => {
     const link = typeof window !== 'undefined' 
       ? `${window.location.origin}/properties/${property.id}`
       : `https://solution-immobilier.vercel.app/properties/${property.id}`;
     
-    // ✅ الرقم الصحيح
     const whatsappNumber = "212607633144";
     
     let message: string;
     
     if (language === 'fr') {
-      message = `🏠 *${property.propertyType} ${property.operation}* - ${property.city}
-
-📍 *${property.propertyType}* ${property.district || ''} - ${property.city}
-📐 ${property.area} m² | 🛏️ ${property.rooms} Ch. | 🚿 ${property.bathrooms || 0} SDB
-
-💰 *${displayPrice(property, t)}* ${property.negotiable ? '✅ Négociable' : ''}
-
-📝 ${property.description ? property.description.substring(0, 100) + '...' : ''}
-
-🔗 *Voir l'annonce & photos:*
- ${link}
-
-━━━━━━━━━━━━━━━━━
-
-📱 *Suivez-nous sur Facebook:*
-https://web.facebook.com/SOLUTION.ImmobilierS
-
-📞 *SOLUTION Immobilier - Votre confiance, notre priorité*`;
+      message = `🏠 *${property.propertyType} ${property.operation}* - ${property.city}\n\n📍 *${property.propertyType}* ${property.district || ''} - ${property.city}\n📐 ${property.area} m² | 🛏️ ${property.rooms} Ch. | 🚿 ${property.bathrooms || 0} SDB${property.floor !== undefined ? `\n🏢 Etage: ${formatFloor(property.floor)}` : ''}\n\n💰 *${displayPrice(property, t)}* ${property.negotiable ? '✅ Négociable' : ''}\n\n📝 ${property.description ? property.description.substring(0, 100) + '...' : ''}\n\n🔗 *Voir l'annonce & photos:*\n ${link}\n\n━━━━━━━━━━━━━━━━━\n\n📱 *Suivez-nous sur Facebook:*\nhttps://web.facebook.com/SOLUTION.ImmobilierS\n\n📞 *SOLUTION Immobilier - Votre confiance, notre priorité*`;
     } else {
-      message = `🏠 *${property.propertyType} ${property.operation}* - ${property.city}
-
-📍 *${property.propertyType}* ${property.district || ''} - ${property.city}
-📐 ${property.area} م² | 🛏️ ${property.rooms} غرف | 🚿 ${property.bathrooms || 0} حمامات
-
-💰 *${displayPrice(property, t)}* ${property.negotiable ? '✅ قابل للتفاوض' : ''}
-
-📝 ${property.description ? property.description.substring(0, 100) + '...' : ''}
-
-🔗 *شاهد الصور والتفاصيل:*
- ${link}
-
-━━━━━━━━━━━━━━━━━
-
-📱 *تابعنا على فيسبوك:*
-https://web.facebook.com/SOLUTION.ImmobilierS
-
-📞 *SOLUTION Immobilier - حلول عقارية*`;
+      message = `🏠 *${property.propertyType} ${property.operation}* - ${property.city}\n\n📍 *${property.propertyType}* ${property.district || ''} - ${property.city}\n📐 ${property.area} م² | 🛏️ ${property.rooms} غرف | 🚿 ${property.bathrooms || 0} حمامات${property.floor !== undefined ? `\n🏢 ${formatFloor(property.floor)}` : ''}\n\n💰 *${displayPrice(property, t)}* ${property.negotiable ? '✅ قابل للتفاوض' : ''}\n\n📝 ${property.description ? property.description.substring(0, 100) + '...' : ''}\n\n🔗 *شاهد الصور والتفاصيل:*\n ${link}\n\n━━━━━━━━━━━━━━━━━\n\n📱 *تابعنا على فيسبوك:*\nhttps://web.facebook.com/SOLUTION.ImmobilierS\n\n📞 *SOLUTION Immobilier - حلول عقارية*`;
     }
 
     const encodedMessage = encodeURIComponent(message);
-    // ✅ إضافة الرقم هنا (كان ناقصاً!)
     window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -120,11 +127,13 @@ https://web.facebook.com/SOLUTION.ImmobilierS
       : `https://solution-immobilier.vercel.app/properties/${property.id}`;
       
     navigator.clipboard.writeText(link).then(() => {
-      dispatch({ type: "SHOW_TOAST", payload: { message: language === 'ar' ? '✅ تم نسخ الرابط!' : '✅ Lien copié!', type: "success" }});
+      if (dispatch) {
+        dispatch({ type: "SHOW_TOAST", payload: { message: language === 'ar' ? '✅ تم نسخ الرابط!' : '✅ Lien copié!', type: "success" }});
+      }
     });
   };
 
-  // ===== حذف (مع _firestoreId) =====
+  // ===== حذف =====
   const handleDelete = async () => {
     if (!confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العقار؟' : 'Êtes-vous sûr de supprimer ce bien?')) return;
     
@@ -151,7 +160,6 @@ https://web.facebook.com/SOLUTION.ImmobilierS
   };
 
   return (
-    // ✅ بطاقة محسنة مع تصميم ذهبي
     <div className="property-card-enhanced" style={{
       background: 'linear-gradient(145deg, var(--bg-card), #162033)',
       border: '1px solid var(--border-color)',
@@ -160,7 +168,7 @@ https://web.facebook.com/SOLUTION.ImmobilierS
       transition: 'all var(--transition-slow)',
       position: 'relative'
     }}>
-      {/* ✅ شريط ذهبي علوي (يظهر عند Hover) */}
+      {/* شريط ذهبي علوي */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -182,43 +190,43 @@ https://web.facebook.com/SOLUTION.ImmobilierS
           style={{ transition: 'transform 0.6s ease' }}
         />
         
-        {/* ✅ زر المفضلة محسن */}
+        {/* زر المفضلة */}
         <button 
           onClick={handleFav} 
-          className="absolute top-3 right-3 p-2.5 rounded-full transition-all hover:scale-110"
+          className="absolute top-3 right-3 p-2.5 rounded-full transition-all hover:scale-110 z-20"
           style={{
             background: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(10px)',
-            boxShadow: 'var(--shadow-sm)'
+            boxShadow: 'var(--shadow-sm)',
+            border: 'none',
+            cursor: 'pointer'
           }}
+          title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
         >
-          <span className={`text-xl ${isFav ? "text-red-500" : "text-gray-400"}`}>
+          <span className={`text-xl transition-colors duration-200`} style={{ color: isFav ? '#EF4444' : '#9CA3AF' }}>
             {isFav ? "❤️" : "🤍"}
           </span>
         </button>
         
-        {/* ✅ Badges محسنة */}
+        {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
-          <span className="badge-success px-3 py-1.5 rounded-full text-xs font-bold" style={{
+          <span className="px-3 py-1.5 rounded-full text-xs font-bold" style={{
             background: 'linear-gradient(135deg, #D4AF37, #E5C76B)',
             color: '#0A1628',
-            boxShadow: 'var(--shadow-gold)'
+            boxShadow: '0 2px 10px rgba(212, 175, 55, 0.3)'
           }}>
             {property.operation}
           </span>
-          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-            property.status === "متوفر" 
-              ? "text-white" 
-              : "text-white"
-          }`} style={{
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold`} style={{
             background: property.status === "متوفر" ? '#25D366' : '#F59E0B',
+            color: 'white',
             boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
           }}>
             {property.status}
           </span>
         </div>
         
-        {/* ✅ ID Badge */}
+        {/* ID Badge */}
         <div className="absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-bold" style={{
           background: 'rgba(0,0,0,0.75)',
           color: 'var(--gold-primary)',
@@ -230,31 +238,39 @@ https://web.facebook.com/SOLUTION.ImmobilierS
 
       {/* معلومات */}
       <div className="p-5" style={{ color: 'white' }}>
-        
-        {/* ✅ العنوان */}
         <h3 className="text-lg font-bold mb-3 leading-tight" style={{ lineHeight: '1.4' }}>
           {property.propertyType} {language === 'fr' ? 'à' : 'في'} {property.city} - {property.district}
         </h3>
         
-        {/* ✅ المواصفات */}
+        {/* ✅✅✅ المعلومات التفصيلية - مع الطابق! */}
         <div className="flex gap-4 mb-4 flex-wrap text-sm" style={{ color: 'var(--muted)' }}>
           <span className="flex items-center gap-1">
             <span style={{ color: 'var(--gold-primary)' }}>📐</span> 
             {property.area} م²
           </span>
+          
           <span className="flex items-center gap-1">
             <span style={{ color: 'var(--gold-primary)' }}>🛏️</span> 
             {property.rooms}
           </span>
+          
           {property.bathrooms > 0 && (
             <span className="flex items-center gap-1">
               <span style={{ color: 'var(--gold-primary)' }}>🚿</span> 
               {property.bathrooms}
             </span>
           )}
+          
+          {/* ✅✅✅ الطابق - جديد! */}
+          {property.floor !== undefined && property.floor !== null && (
+            <span className="flex items-center gap-1">
+              <span style={{ color: 'var(--gold-primary)' }}>🏢</span> 
+              {formatFloor(property.floor)}
+            </span>
+          )}
         </div>
         
-        {/* ✅ السعر بتدرج ذهبي */}
+        {/* السعر - الآن بالأرقام! */}
         <div className="text-2xl font-black mb-5 pb-4 border-b" style={{
           background: 'linear-gradient(135deg, #D4AF37, #E5C76B, #FFFFFF)',
           WebkitBackgroundClip: 'text',
@@ -264,7 +280,7 @@ https://web.facebook.com/SOLUTION.ImmobilierS
           {displayPrice(property, t)}
         </div>
 
-        {/* معلومات صاحب العقار (للمدير) */}
+        {/* معلومات المدير */}
         {isAdmin && property.ownerName && (
           <div className="mb-4 p-4 rounded-xl" style={{
             background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05))',
@@ -281,28 +297,19 @@ https://web.facebook.com/SOLUTION.ImmobilierS
             </p>
             <div className="flex gap-2 mt-3 flex-wrap">
               {property.ownerPhone && (
-                <button 
-                  onClick={callPhone} 
-                  className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105"
-                  style={{
-                    background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                    color: 'white'
-                  }}
-                >
+                <button onClick={callPhone} className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105" style={{
+                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                  color: 'white'
+                }}>
                   ☎️ {property.ownerPhone}
                 </button>
               )}
               
-              {/* ✅ زر واتساب للمدير - مصحح */}
               {(property.ownerWhatsapp || property.ownerPhone) && (
-                <button 
-                  onClick={openWhatsapp} 
-                  className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105"
-                  style={{
-                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
-                    color: 'white'
-                  }}
-                >
+                <button onClick={openWhatsapp} className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105" style={{
+                  background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                  color: 'white'
+                }}>
                   💬 واتساب
                 </button>
               )}
@@ -310,65 +317,47 @@ https://web.facebook.com/SOLUTION.ImmobilierS
           </div>
         )}
 
-        {/* للزوار - زر الاستفسار */}
+        {/* زر الاستفسار للزوار */}
         {!isAdmin && property.ownerName && (
           <div className="mb-4">
-            <button 
-              onClick={() => alert(t.properties?.inquirySuccess || 'شكراً!')} 
-              className="w-full py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg"
-              style={{
-                background: 'var(--gradient-gold)',
-                color: 'var(--bg-primary)'
-              }}
-            >
+            <button onClick={() => alert(t.properties?.inquirySuccess || 'شكراً!')} className="w-full py-3 rounded-xl font-bold text-sm transition-all hover:shadow-lg" style={{
+              background: 'var(--gradient-gold)',
+              color: 'var(--bg-primary)'
+            }}>
               📩 {t.properties?.inquiry || 'استفسار'}
             </button>
           </div>
         )}
 
-        {/* ===== ✅ الأزرار الرئيسية ===== */}
+        {/* الأزرار الرئيسية */}
         <div className="flex gap-3">
-          <Link 
-            href={`/properties/${property.id}`} 
-            className="flex-1 text-center py-3 rounded-xl font-bold transition-all hover:shadow-lg"
-            style={{
-              background: 'var(--gradient-gold)',
-              color: 'var(--bg-primary)'
-            }}
-          >
+          <Link href={`/properties/${property.id}`} className="flex-1 text-center py-3 rounded-xl font-bold transition-all hover:shadow-lg" style={{
+            background: 'var(--gradient-gold)',
+            color: 'var(--bg-primary)'
+          }}>
             {t.properties?.details || 'التفاصيل'} →
           </Link>
           
           {actions && (
             <>
-              <Link 
-                href={`/dashboard/properties/form?id=${property.id}`} 
-                className="px-4 py-3 rounded-xl transition-all hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                  color: 'white'
-                }}
-              >
+              <Link href={`/dashboard/properties/form?id=${property.id}`} className="px-4 py-3 rounded-xl transition-all hover:scale-105" style={{
+                background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                color: 'white'
+              }}>
                 ✏️
               </Link>
-              <button 
-                onClick={handleDelete} 
-                className="px-4 py-3 rounded-xl transition-all hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #DC2626, #EF4444)',
-                  color: 'white'
-                }}
-              >
+              <button onClick={handleDelete} className="px-4 py-3 rounded-xl transition-all hover:scale-105" style={{
+                background: 'linear-gradient(135deg, #DC2626, #EF4444)',
+                color: 'white'
+              }}>
                 🗑️
               </button>
             </>
           )}
         </div>
 
-        {/* ===== ✅✅✅ أزرار المشاركة (واتساب + نسخ) ===== */}
+        {/* أزرار المشاركة */}
         <div className="mt-4 pt-4 flex gap-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          
-          {/* ✅✅✅ زر واتساب - مصحح بالرقم الصحيح */}
           <button 
             onClick={shareToWhatsApp}
             className="flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 hover:shadow-lg"
@@ -380,7 +369,6 @@ https://web.facebook.com/SOLUTION.ImmobilierS
             💬 {t.properties?.whatsapp || 'واتساب'}
           </button>
           
-          {/* زر نسخ الرابط */}
           <button 
             onClick={copyLink}
             className="px-5 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105"
@@ -396,7 +384,7 @@ https://web.facebook.com/SOLUTION.ImmobilierS
         </div>
       </div>
 
-      {/* ✅ CSS للـ Hover Effects */}
+      {/* CSS */}
       <style jsx>{`
         .property-card-enhanced:hover {
           transform: translateY(-8px) scale(1.01);
@@ -412,7 +400,6 @@ https://web.facebook.com/SOLUTION.ImmobilierS
           transform: scale(1.08) rotate(0.5deg);
         }
         
-        /* تحسين الزر */
         button:hover {
           transform: translateY(-2px);
         }
