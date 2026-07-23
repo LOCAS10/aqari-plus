@@ -1,4 +1,6 @@
+
 export const dynamic = 'force-dynamic';
+
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { doc, getDoc } from 'firebase/firestore';
