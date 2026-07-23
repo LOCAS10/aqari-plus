@@ -159,20 +159,7 @@ export default function Header() {
                 animation: "shimmer 3s linear infinite",
               }}
             >
-              SOLUTION
-            </div>
-            <div
-              style={{
-                fontSize: scrolled ? "0.7rem" : "0.85rem",
-                color: "var(--gold-primary)",
-                letterSpacing: "3px",
-                fontWeight: "600",
-                marginTop: "3px",
-                marginLeft: "8px",
-                transition: "font-size 0.3s ease",
-              }}
-            >
-              IMMOBILIER
+              SOLUTION IMMOBILIER
             </div>
           </Link>
 
