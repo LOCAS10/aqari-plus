@@ -54,7 +54,6 @@ export default function Header() {
           justifyContent: "space-between",
         }}>
           
-          {/* الشعار (يمين) */}
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none", flexShrink: 0 }}>
             <div style={{
               fontSize: scrolled ? "0.95rem" : "1rem",
@@ -70,7 +69,6 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="desktop-nav" style={{ 
             display: "flex", 
             alignItems: "center", 
@@ -89,9 +87,9 @@ export default function Header() {
               href="/favorites"
               className="nav-link icon-btn"
               style={{ position: "relative", padding: "8px 12px" }}
-              title={language === "ar" ? "المفضلة" : "Favoris"}
+              title={language === "ar" ? "Favorites" : "Favoris"}
             >
-              <span style={{ fontSize: "1.15rem" }}>المفضلة❤️</span>
+              <span style={{ fontSize: "1.15rem" }}>Favorites</span>
               {state.favorites && state.favorites.length > 0 && (
                 <span style={{
                   position: "absolute", top: "-3px", right: "-5px",
@@ -108,9 +106,9 @@ export default function Header() {
               href="/archive"
               className="nav-link icon-btn"
               style={{ padding: "8px 12px" }}
-              title={language === "ar" ? "الأرشيف" : "Archive"}
+              title={language === "ar" ? "Archive" : "Archive"}
             >
-              <span style={{ fontSize: "1.15rem" }}>الأرشيف📦</span>
+              <span style={{ fontSize: "1.15rem" }}>Archive</span>
             </Link>
 
             <Link
@@ -136,7 +134,6 @@ export default function Header() {
             <LanguageSwitcher />
           </nav>
 
-          {/* زر Hamburger - أنيق */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="hamburger-btn"
@@ -155,7 +152,7 @@ export default function Header() {
               alignItems: "center",
               justifyContent: "center",
             }}
-            aria-label="القائمة"
+            aria-label="Menu"
           >
             {mobileMenuOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -170,7 +167,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ===== Overlay خفي ===== */}
       {mobileMenuOpen && (
         <div 
           onClick={() => setMobileMenuOpen(false)}
@@ -182,12 +178,11 @@ export default function Header() {
             bottom: 0,
             background: "rgba(0, 0, 0, 0.4)",
             zIndex: 9997,
-            transition: "opacity 0.3s ease",
           }}
         />
       )}
 
-      {/* ===== 🎨 Side Drawer - قائمة جانبية منزلقة ===== */}
+      {/* Side Drawer */}
       <div
         style={{
           position: "fixed",
@@ -207,18 +202,12 @@ export default function Header() {
           flexDirection: "column",
         }}
       >
-        {/* رأس القائمة */}
         <div style={{
           padding: "28px 24px 20px",
           borderBottom: "1px solid rgba(212, 175, 55, 0.15)",
           background: "rgba(212, 175, 55, 0.03)",
         }}>
-          {/* شعار صغير */}
-          <Link 
-            href="/" 
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ textDecoration: "none" }}
-          >
+          <Link href="/" onClick={() => setMobileMenuOpen(false)} style={{ textDecoration: "none" }}>
             <div style={{
               fontSize: "1.15rem",
               fontWeight: "900",
@@ -230,299 +219,102 @@ export default function Header() {
               SOLUTION IMMOBILIER
             </div>
             <div style={{ color: "var(--muted)", fontSize: "0.75rem", letterSpacing: "1px" }}>
-              {language === 'ar' ? 'حلول عقارية' : 'Solutions Immobilières'}
+              {language === 'ar' ? 'Real Estate' : 'Immobilier'}
             </div>
           </Link>
         </div>
 
-        {/* الروابط الرئيسية */}
         <nav style={{ padding: "16px 16px", flex: 1 }}>
           
-          {/* عنصر القائمة المطور */}
-          <DrawerItem 
-            href="/" 
-            icon={<HomeIcon />}
-            text={language === "ar" ? "الرئيسية" : "Accueil"}
-            onClick={() => setMobileMenuOpen(false)}
-            isFirst
-          />
-          
-          <DrawerItem 
-            href="/properties" 
-            icon={<BuildingIcon />}
-            text={language === "ar" ? "العقارات" : "Biens"}
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          
-   <DrawerItem 
-  href="/favorites" 
-  icon={<HeartIcon />}
-  text={language === 'ar' ? "المفضلة" : "Favoris"}  ← ✅ صحّح هذا
-  badge={state.favorites?.length || 0}
-  onClick={() => setMobileMenuOpen(false)}
-  highlight
-/>
-          
-          <DrawerItem 
-            href="/archive" 
-            icon={<ArchiveIcon />}
-            text={language === "ar" ? "الأرشيف" : "Archive"}
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <DrawerItem href="/" icon={<HomeIcon />} text={language === "ar" ? "Home" : "Accueil"} onClick={() => setMobileMenuOpen(false)} isFirst />
+          <DrawerItem href="/properties" icon={<BuildingIcon />} text={language === "ar" ? "Properties" : "Biens"} onClick={() => setMobileMenuOpen(false)} />
+          <DrawerItem href="/favorites" icon={<HeartIcon />} text={`${language === 'ar' ? 'Favorites' : 'Favoris'} (${state.favorites?.length || 0})`} badge={state.favorites?.length || 0} onClick={() => setMobileMenuOpen(false)} highlight />
+          <DrawerItem href="/archive" icon={<ArchiveIcon />} text={language === "ar" ? "Archive" : "Archive"} onClick={() => setMobileMenuOpen(false)} />
 
-          {/* فاصل */}
-          <div style={{ 
-            height: "1px", 
-            background: "linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent)", 
-            margin: "20px 12px 16px" 
-          }}></div>
+          <div style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent)", margin: "20px 12px 16px" }}></div>
 
-          <DrawerItem 
-            href="/login" 
-            icon={<LoginIcon />}
-            text={t.nav?.login || language === "ar" ? "دخول" : "Connexion"}
-            onClick={() => setMobileMenuOpen(false)}
-            isPrimary
-          />
+          <DrawerItem href="/login" icon={<LoginIcon />} text={t.nav?.login || language === "ar" ? "Login" : "Connexion"} onClick={() => setMobileMenuOpen(false)} isPrimary />
 
-          {/* اللغة */}
           <div style={{ padding: "16px 12px 8px" }}>
             <LanguageSwitcher />
           </div>
         </nav>
 
-        {/* التذييل */}
         <div style={{ 
           padding: "20px 24px",
           borderTop: "1px solid rgba(212, 175, 55, 0.1)",
           background: "rgba(0,0,0,0.15)",
         }}>
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "10px",
-            marginBottom: "10px"
-          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
             <div style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
+              width: "36px", height: "36px", borderRadius: "10px",
               background: "linear-gradient(135deg, #D4AF37, #E5C76B)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.1rem",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
             }}>🏢</div>
             <div>
-              <div style={{ color: "white", fontWeight: "700", fontSize: "0.85rem" }}>
-                SOLUTION Immobilier
-              </div>
-              <div style={{ color: "var(--muted)", fontSize: "0.7rem" }}>
-                الدار البيضاء، المغرب
-              </div>
+              <div style={{ color: "white", fontWeight: "700", fontSize: "0.85rem" }}>SOLUTION Immobilier</div>
+              <div style={{ color: "var(--muted)", fontSize: "0.7rem" }}>{language === 'ar' ? 'Casablanca' : 'Casablanca'}</div>
             </div>
           </div>
-          <p style={{ color: "var(--muted)", fontSize: "0.68rem", margin: 0 }}>
-            © 2024 - جميع الحقوق محفوظة
-          </p>
+          <p style={{ color: "var(--muted)", fontSize: "0.68rem", margin: 0 }}>© 2024 All rights reserved</p>
         </div>
       </div>
 
       <style jsx>{`
-        .desktop-nav {
-          display: flex;
-        }
-
+        .desktop-nav { display: flex; }
         @media (max-width: 767px) {
-          .desktop-nav {
-            display: none !important;
-          }
-          .hamburger-btn {
-            display: flex !important;
-          }
+          .desktop-nav { display: none !important; }
+          .hamburger-btn { display: flex !important; align-items: center; justify-content: center; }
         }
-
         .nav-link {
-          padding: 8px 14px;
-          border-radius: 10px;
-          font-weight: 600;
-          font-size: 0.88rem;
-          color: white;
-          transition: all 0.25s ease;
-          text-decoration: none;
-          white-space: nowrap;
+          padding: 8px 14px; border-radius: 10px; font-weight: 600;
+          font-size: 0.88rem; color: white; transition: all 0.25s ease;
+          text-decoration: none; white-space: nowrap;
         }
-
-        .nav-link:hover {
-          background: rgba(212, 175, 55, 0.12);
-          color: #d4af37;
-        }
-
-        .icon-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .btn-login:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
-        }
-
-        @keyframes shimmer {
-          0% { background-position: 0 center; }
-          100% { background-position: 200% center; }
-        }
+        .nav-link:hover { background: rgba(212, 175, 55, 0.12); color: #d4af37; }
+        .icon-btn { display: flex; align-items: center; justify-content: center; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45); }
+        @keyframes shimmer { 0% { background-position: 0 center; } 100% { background-position: 200% center; } }
       `}</style>
     </>
   );
 }
 
-// ===== أيقونات SVG مخصصة =====
 function HomeIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  );
+  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
 }
 
 function BuildingIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-      <path d="M9 22v-4h6v4"/>
-      <path d="M8 6h.01M16 6h.01M12 11h.01M12 16h.01M8 11h.01M16 11h.01M8 16h.01M16 16h.01"/>
-    </svg>
-  );
+  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 11h.01M12 16h.01M8 11h.01M16 11h.01M8 16h.01M16 16h.01"/></svg>);
 }
 
 function HeartIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/>
-    </svg>
-  );
+  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/></svg>);
 }
 
 function ArchiveIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="21 8 21 21 3 21 3 8"/>
-      <rect x="1" y="3" width="22" height="5" rx="1" ry="1"/>
-      <line x1="10" y1="12" x2="14" y2="12"/>
-    </svg>
-  );
+  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5" rx="1" ry="1"/><line x1="10" y1="12" x2="14" y2="12"/></svg>);
 }
 
 function LoginIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
-      <polyline points="10 17 15 12 10 7"/>
-      <line x1="15" y1="12" x2="3" y2="12"/>
-    </svg>
-  );
+  return (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>);
 }
 
-// ===== مكون عنصر القائمة =====
-function DrawerItem({ 
-  href, 
-  icon, 
-  text, 
-  badge, 
-  isPrimary, 
-  isFirst,
-  highlight,
-  onClick 
-}: { 
-  href: string; 
-  icon: React.ReactNode; 
-  text: string; 
-  badge?: number;
-  isPrimary?: boolean;
-  isFirst?: boolean;
-  highlight?: boolean;
-  onClick: () => void;
-}) {
+function DrawerItem({ href, icon, text, badge, isPrimary, isFirst, highlight, onClick }: { href: string; icon: React.ReactNode; text: string; badge?: number; isPrimary?: boolean; isFirst?: boolean; highlight?: boolean; onClick: () => void }) {
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "14px",
-        padding: isFirst ? "16px 18px" : "14px 18px",
-        borderRadius: "14px",
-        textDecoration: "none",
-        color: isPrimary ? "#1a1a2e" : "white",
-        background: isPrimary 
-          ? "linear-gradient(135deg, #D4AF37, #E5C76B)" 
-          : highlight
-            ? "rgba(239, 68, 68, 0.08)"
-            : "transparent",
-        border: isPrimary 
-          ? "none" 
-          : highlight
-            ? "1px solid rgba(239, 68, 68, 0.15)"
-            : "1px solid transparent",
-        fontWeight: isPrimary ? "800" : "600",
-        fontSize: "0.98rem",
-        transition: "all 0.25s ease",
-        marginTop: isFirst ? "0" : "2px",
-      }}
-    >
-      {/* حاوية الأيقونة */}
-      <span style={{
-        width: "38px",
-        height: "38px",
-        borderRadius: "12px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: isPrimary 
-          ? "rgba(255,255,255,0.2)"
-          : highlight
-            ? "rgba(239, 68, 68, 0.1)"
-            : "rgba(255,255,255,0.05)",
-        color: isPrimary ? "#1a1a2e" : highlight ? "#EF4444" : "var(--gold-primary)",
-        flexShrink: 0,
-      }}>
-        {icon}
-      </span>
-      
-      {/* النص */}
+    <Link href={href} onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: "14px",
+      padding: isFirst ? "16px 18px" : "14px 18px", borderRadius: "14px",
+      textDecoration: "none", color: isPrimary ? "#1a1a2e" : "white",
+      background: isPrimary ? "linear-gradient(135deg, #D4AF37, #E5C76B)" : highlight ? "rgba(239, 68, 68, 0.08)" : "transparent",
+      border: isPrimary ? "none" : highlight ? "1px solid rgba(239, 68, 68, 0.15)" : "1px solid transparent",
+      fontWeight: isPrimary ? "800" : "600", fontSize: "0.98rem", transition: "all 0.25s ease",
+      marginTop: isFirst ? "0" : "2px",
+    }}>
+      <span style={{ width: "38px", height: "38px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: isPrimary ? "rgba(255,255,255,0.2)" : highlight ? "rgba(239, 68, 68, 0.1)" : "rgba(255,255,255,0.05)", color: isPrimary ? "#1a1a2e" : highlight ? "#EF4444" : "var(--gold-primary)", flexShrink: 0 }}>{icon}</span>
       <span style={{ flex: 1 }}>{text}</span>
-      
-      {/* Badge */}
-      {badge !== undefined && badge > 0 && !isPrimary && (
-        <span style={{
-          background: highlight ? "#EF4444" : "var(--gold-primary)",
-          color: "white",
-          borderRadius: "20px",
-          minWidth: "24px",
-          height: "24px",
-          fontSize: "11px",
-          fontWeight: "700",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          padding: "0 8px",
-          boxShadow: highlight ? "0 2px 8px rgba(239, 68, 68, 0.35)" : "0 2px 8px rgba(212, 175, 55, 0.25)",
-        }}>
-          {badge > 99 ? '99+' : badge}
-        </span>
-      )}
-      
-      {/* سهم */}
-      <span style={{ 
-        opacity: 0.35, 
-        fontSize: "0.9rem",
-        color: isPrimary ? "#1a1a2e" : "inherit",
-      }}>←</span>
+      {badge !== undefined && badge > 0 && !isPrimary && (<span style={{ background: highlight ? "#EF4444" : "var(--gold-primary)", color: "white", borderRadius: "20px", minWidth: "24px", height: "24px", fontSize: "11px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 8px" }}>{badge > 99 ? '99+' : badge}</span>)}
+      <span style={{ opacity: 0.35, fontSize: "0.9rem" }}>&#8592;</span>
     </Link>
   );
 }
