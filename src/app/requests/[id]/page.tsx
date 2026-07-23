@@ -1,7 +1,9 @@
+
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Link from 'next/link';
 import RequestDetailClient from './RequestDetailClient';
 
 interface PageProps {
@@ -13,12 +15,10 @@ export default async function RequestDetailPage({ params }: PageProps) {
 
   const cookieStore = await cookies();
   const userCookie = cookieStore.get('user');
-  const tokenCookie = cookieStore.get('auth-token') || 
-                     cookieStore.get('token') ||
-                     cookieStore.get('session');
+  const tokenCookie = cookieStore.get('auth-token') || cookieStore.get('token') || cookieStore.get('session');
 
   if (!userCookie && !tokenCookie) {
-    redirect(`/login?redirect=/requests/${id}&message=required`);
+    redirect(`/login?redirect=/requests/${id}`);
   }
 
   try {
@@ -40,7 +40,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
     const request = { id: docSnap.id, ...docSnap.data() };
     return <RequestDetailClient request={request} />;
     
-  } catch (error) {
+  } catch (err) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="text-center p-8">
@@ -52,3 +52,4 @@ export default async function RequestDetailPage({ params }: PageProps) {
     );
   }
 }
+EOF
