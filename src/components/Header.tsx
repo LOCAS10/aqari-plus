@@ -12,7 +12,6 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // تأثير التمرير
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 100);
@@ -57,57 +56,9 @@ export default function Header() {
             height: "100%",
           }}
         >
-          {/* ===== الشعار ===== */}
-          <Link
-            href="/"
-            style={{ display: "flex", alignItems: "center", gap: "12px" }}
-            className="group"
-          >
-            <div
-              style={{
-                width: scrolled ? "48px" : "55px",
-                height: scrolled ? "48px" : "55px",
-                background: "var(--gradient-gold)",
-                borderRadius: "14px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: scrolled ? "1.5rem" : "1.8rem",
-                boxShadow: "var(--shadow-gold)",
-                transition: "all 0.3s ease",
-              }}
-              className="animate-glow"
-            >
-              🏢
-            </div>
-            <div>
-              <div
-                style={{
-                  fontSize: scrolled ? "1.3rem" : "1.6rem",
-                  fontWeight: "900",
-                  color: "white",
-                  letterSpacing: "1px",
-                  transition: "font-size 0.3s ease",
-                }}
-              >
-                SOLUTION
-              </div>
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  color: "var(--gold-primary)",
-                  letterSpacing: "2px",
-                  fontWeight: "600",
-                  marginTop: "2px",
-                }}
-              >
-                IMMOBILIER
-              </div>
-            </div>
-          </Link>
-
-          {/* ===== Desktop Navigation ===== */}
+          {/* ===== Desktop Navigation (يمين) ===== */}
           <nav style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            
             {/* الرئيسية */}
             <Link href="/" className="nav-link">
               {language === "ar" ? "الرئيسية" : "Accueil"}
@@ -118,33 +69,32 @@ export default function Header() {
               {language === "ar" ? "العقارات" : "Biens"}
             </Link>
 
-            {/* ✅❤️ المفضلة */}
+            {/* ✅❤️ المفضلة - أيقونة فقط */}
             <Link
               href="/favorites"
-              className="nav-link"
-              style={{ position: "relative" }}
+              className="nav-link icon-btn"
+              style={{ position: "relative", padding: "10px 14px" }}
               title={language === "ar" ? "المفضلة" : "Favoris"}
             >
-              ❤️
-              {/* Badge العدادي */}
+              <span style={{ fontSize: "1.3rem" }}>المفضلة❤️</span>
+              {/* Badge */}
               {state.favorites && state.favorites.length > 0 && (
                 <span
                   style={{
                     position: "absolute",
-                    top: "-6px",
-                    right: "-10px",
+                    top: "-4px",
+                    right: "-6px",
                     background: "#EF4444",
                     color: "white",
                     borderRadius: "50%",
-                    width: "22px",
-                    height: "22px",
-                    fontSize: "11px",
+                    width: "20px",
+                    height: "20px",
+                    fontSize: "10px",
                     fontWeight: "900",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     boxShadow: "0 2px 10px rgba(239, 68, 68, 0.5)",
-                    animation: "pulse 2s infinite",
                   }}
                 >
                   {state.favorites.length}
@@ -152,13 +102,14 @@ export default function Header() {
               )}
             </Link>
 
-            {/* ✅📦 الأرشيف */}
+            {/* ✅📦 الأرشيف - أيقونة فقط */}
             <Link
               href="/archive"
-              className="nav-link"
+              className="nav-link icon-btn"
+              style={{ padding: "10px 14px" }}
               title={language === "ar" ? "الأرشيف" : "Archive"}
             >
-              📦
+              <span style={{ fontSize: "1.3rem" }}>الأرشيف📦</span>
             </Link>
 
             {/* زر تسجيل الدخول */}
@@ -184,6 +135,46 @@ export default function Header() {
             {/* زر اللغة */}
             <LanguageSwitcher />
           </nav>
+
+          {/* ===== الشعار (يسار) - تدرج ذهبي أبيض ===== */}
+          <Link
+            href="/"
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              textDecoration: "none"
+            }}
+            className="logo-container"
+          >
+            <div
+              style={{
+                fontSize: scrolled ? "1.4rem" : "1.7rem",
+                fontWeight: "900",
+                letterSpacing: "2px",
+                transition: "font-size 0.3s ease",
+                background: "linear-gradient(135deg, #FFFFFF 0%, #D4AF37 50%, #FFFFFF 100%)",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                animation: "shimmer 3s linear infinite",
+              }}
+            >
+              SOLUTION
+            </div>
+            <div
+              style={{
+                fontSize: scrolled ? "0.7rem" : "0.85rem",
+                color: "var(--gold-primary)",
+                letterSpacing: "3px",
+                fontWeight: "600",
+                marginTop: "3px",
+                marginLeft: "8px",
+                transition: "font-size 0.3s ease",
+              }}
+            >
+              IMMOBILIER
+            </div>
+          </Link>
 
           {/* Mobile Menu Button */}
           <button
@@ -214,52 +205,23 @@ export default function Header() {
               paddingTop: "20px",
               marginTop: "15px",
               borderTop: "1px solid var(--border-color)",
-              animation: "fadeUp 0.3s ease",
             }}
           >
-            <Link
-              href="/"
-              style={mobileLinkStyle}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/" style={mobileLinkStyle} onClick={() => setMobileMenuOpen(false)}>
               🏠 {language === "ar" ? "الرئيسية" : "Accueil"}
             </Link>
-
-            <Link
-              href="/properties"
-              style={mobileLinkStyle}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/properties" style={mobileLinkStyle} onClick={() => setMobileMenuOpen(false)}>
               🏠 {language === "ar" ? "العقارات" : "Biens"}
             </Link>
-
-            {/* ✅❤️ المفضلة للموبايل */}
-            <Link
-              href="/favorites"
-              style={mobileLinkStyle}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              ❤️ {language === "ar" ? "المفضلة" : "Favoris"}{" "}
-              ({state.favorites?.length || 0})
+            <Link href="/favorites" style={mobileLinkStyle} onClick={() => setMobileMenuOpen(false)}>
+              ❤️ {language === "ar" ? "المفضلة" : "Favoris"} ({state.favorites?.length || 0})
             </Link>
-
-            {/* ✅📦 الأرشيف للموبايل */}
-            <Link
-              href="/archive"
-              style={mobileLinkStyle}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/archive" style={mobileLinkStyle} onClick={() => setMobileMenuOpen(false)}>
               📦 {language === "ar" ? "الأرشيف" : "Archive"}
             </Link>
-
-            <Link
-              href="/login"
-              style={mobileLinkStyle}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/login" style={mobileLinkStyle} onClick={() => setMobileMenuOpen(false)}>
               🔐 {t.nav?.login || language === "ar" ? "دخول" : "Connexion"}
             </Link>
-
             <div style={{ paddingLeft: "16px", paddingTop: "12px" }}>
               <LanguageSwitcher />
             </div>
@@ -308,16 +270,24 @@ export default function Header() {
           transform: translateY(-2px);
         }
 
-        @keyframes pulse {
+        .icon-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* تأثير التدرج المتحرك */
+        @keyframes shimmer {
           0% {
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
-          }
-          70% {
-            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            background-position: 0 center;
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            background-position: 200% center;
           }
+        }
+
+        .logo-container:hover div:first-child {
+          animation: shimmer 1.5s linear infinite;
         }
 
         @keyframes fadeUp {
@@ -330,26 +300,11 @@ export default function Header() {
             transform: translateY(0);
           }
         }
-
-        @keyframes glow {
-          0%,
-          100% {
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
-          }
-        }
-
-        .animate-glow {
-          animation: glow 3s ease-in-out infinite;
-        }
       `}</style>
     </header>
   );
 }
 
-// نمط الروابط في الموبايل
 const mobileLinkStyle: React.CSSProperties = {
   color: "white",
   padding: "12px 16px",
