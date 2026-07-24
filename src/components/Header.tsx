@@ -106,7 +106,7 @@ export default function Header() {
               href="/archive"
               className="nav-link icon-btn"
               style={{ padding: "8px 12px" }}
-              title={language === "ar" ? "Archive" : "Archive"}
+              title={language === "ar" ? "الأرشيف" : "Archive"}
             >
               <span style={{ fontSize: "1.15rem" }}>Archive</span>
             </Link>
@@ -233,10 +233,11 @@ export default function Header() {
           alignContent: "start",
         }}>
           
-          <DrawerItem href="/" icon={<HomeIcon />} text={language === "ar" ? "Home" : "Accueil"} onClick={() => setMobileMenuOpen(false)} />
-          <DrawerItem href="/properties" icon={<BuildingIcon />} text={language === "ar" ? "Properties" : "Biens"} onClick={() => setMobileMenuOpen(false)} />
-          <DrawerItem href="/favorites" icon={<HeartIcon />} text={`${language === 'ar' ? 'Favorites' : 'Favoris'} (${state.favorites?.length || 0})`} badge={state.favorites?.length || 0} onClick={() => setMobileMenuOpen(false)} highlight />
-          <DrawerItem href="/archive" icon={<ArchiveIcon />} text={language === "ar' ? "Archive" : "Archive"} onClick={() => setMobileMenuOpen(false)} />
+          <DrawerItem href="/" icon={<HomeIcon />} text={language === "ar" ? "الرئيسية" : "Accueil"} onClick={() => setMobileMenuOpen(false)} />
+          <DrawerItem href="/properties" icon={<BuildingIcon />} text={language === "ar" ? "العقارات" : "Biens"} onClick={() => setMobileMenuOpen(false)} />
+          <DrawerItem href="/favorites" icon={<HeartIcon />} text={`${language === 'ar' ? 'المفضلة' : 'Favoris'} (${state.favorites?.length || 0})`} badge={state.favorites?.length || 0} onClick={() => setMobileMenuOpen(false)} highlight />
+          {/* ✅ تم إصلاح السطر التالي - علامات الاقتباس والترجمة العربية */}
+          <DrawerItem href="/archive" icon={<ArchiveIcon />} text={language === 'ar' ? "الأرشيف" : "Archive"} onClick={() => setMobileMenuOpen(false)} />
           
           {/* زر الدخول - يمتد على العمودين */}
           <div style={{ 
@@ -245,7 +246,7 @@ export default function Header() {
             marginTop: "8px",
             borderTop: "1px solid rgba(212, 175, 55, 0.1)",
           }}>
-            <DrawerItem href="/login" icon={<LoginIcon />} text={t.nav?.login || language === "ar" ? "Login" : "Connexion"} onClick={() => setMobileMenuOpen(false)} isPrimary />
+            <DrawerItem href="/login" icon={<LoginIcon />} text={t.nav?.login || language === "ar" ? "دخول" : "Connexion"} onClick={() => setMobileMenuOpen(false)} isPrimary />
           </div>
 
           {/* اللغة */}
@@ -267,7 +268,7 @@ export default function Header() {
           textAlign: "center",
         }}>
           <div style={{ marginBottom: "10px" }}>🏢</div>
-          <p style={{ color: "white", fontWeight: "700", fontSize: "0.85rem", margin: "0 0 4px 0 }}>SOLUTION Immobilier</p>
+          <p style={{ color: "white", fontWeight: "700", fontSize: "0.85rem", margin: "0 0 4px 0" }}>SOLUTION Immobilier</p>
           <p style={{ color: "var(--muted)", fontSize: "0.68rem", margin: 0 }}>© 2024</p>
         </div>
       </div>
